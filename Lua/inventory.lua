@@ -22,12 +22,16 @@ function clearScreen()
 end
 
 -- displays information while refilling to the lower text display
+-- if param is nil then buffer is cleared
 function displayModeInfo(str)
+ if(not modeBuffer) then modeBuffer = {} end
+ -- line 1 reserved for title
+ modeBuffer[1] = "      Mode Information"
  local display = panel:getModule(1, 0)
  display.size = 30
  display.text = " "
  if(str) then
-  if(#modeBuffer == 4) then table.remove(modeBuffer, 1) end
+  if(#modeBuffer == 4) then table.remove(modeBuffer, 2) end
   table.insert(modeBuffer, str)
   -- output buffer to display
   local txt = nil
@@ -37,23 +41,26 @@ function displayModeInfo(str)
   display.text = txt
  else
   modeBuffer = {}
+  modeBuffer[1] = "      Mode Information"
  end
 end
 
---displays gerneral information to the upper text display
-function displayInfo(str)
+--displays general information to the upper text display
+function displaySystemInfo()
+ if(not infoBuffer) then infoBuffer = {} end
  local infoDisplay = panel:getModule(1, 2)
- infoDisplay.size = 30
+ infoDisplay.size = 27
  infoDisplay.text = " "
- -- line 1 reserved for splitter count
+ -- line 1 reserved for title
+ infoBuffer[1] = "      System Information"
+ -- line 2 reserved for splitter count
  local splitters = component.proxy(component.findComponent(findClass("CodeableSplitter")))
- infoBuffer[1] = "Splitters: " .. #splitters
- -- line 2 reserved for greedy mode
- if(greedyMode) then infoBuffer[2] = "Greedy mode: On" else infoBuffer[2] = "Greedy mode: Off" end
- -- line 3 reserved for current mode
- if(currentMode == modes.refilling) then infoBuffer[3] = "Mode: Refilling" else infoBuffer[3] = "Mode: Processing" end
- -- insert new message into buffer if there is one (line 4)
- if(str) then infoBuffer[4] = str else infoBuffer[4] = "" end
+ infoBuffer[2] = "Splitters: " .. #splitters
+ -- line 3 reserved for greedy mode
+ if(greedyMode) then infoBuffer[3] = "Greedy mode: On" else infoBuffer[3] = "Greedy mode: Off" end
+ -- line 4 reserved for current mode
+ if(currentMode == modes.refilling) then infoBuffer[4] = "Mode: Refilling" else infoBuffer[4] = "Mode: Processing" end
+
  -- output buffer to display
  local txt = nil
  for _, s in pairs(infoBuffer) do
@@ -62,13 +69,13 @@ function displayInfo(str)
  infoDisplay.text = txt
 end
 
---causes the indicator light to change colour every 2 seconds and runs displayInfo()
+--causes the indicator light to change colour every 2 seconds and runs displaySystemInfo()
 function indicateProgress(reset)
  if(reset) then progTime = computer.millis() end
  if(computer.millis() - progTime < 2000) then
   indicatorLight:setColor(0, 0, 1, 5)
  elseif (computer.millis() - progTime > 2000) then
-  displayInfo()
+  displaySystemInfo()
   indicatorLight:setColor(0, 1, 0, 1)
  end
  if(computer.millis() - progTime > 4000) then
@@ -249,8 +256,6 @@ if not gpu then error("No GPU T1 found!") end
 gpu:bindScreen(screen)
 clearScreen()
 
-modeBuffer = {}
-infoBuffer = {}
 greedyMode = false
 progTime = computer.millis()
 itemsInTransit = 0
