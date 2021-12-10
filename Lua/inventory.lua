@@ -175,11 +175,11 @@ end
 
 --main loop when refilling the container
 function refillContainer()
+ local lastRefillTime = computer.millis()
  displayModeInfo()
  itemsInTransit = 0
  local lowInventories = createInventoryList()
  local n = tableLength(lowInventories)
-  print2Screen(lowInventories)
  while(n > 0) do
   currentMode = modes.refilling
   indicateProgress()
@@ -191,6 +191,7 @@ function refillContainer()
      if (dir == -1) then
       print("No output direction defined for:", spltr.nick)
      elseif(spltr:transferItem(dir)) then
+      lastRefillTime = computer.millis()
       itemsInTransit = itemsInTransit + 1
       lowInventories[intName]["count"] = lowInventories[intName]["count"] + 1
       print("Refilling at:", spltr.nick)
@@ -201,14 +202,19 @@ function refillContainer()
     end
    end
   end
-  n = tableLength(lowInventories)
   if(itemsInTransit > 0) then displayModeInfo("Items transitting: " .. itemsInTransit) end
   displayModeInfo("Filling " .. n .. " slots.")
   checkEvents()
   if(not greedyMode) then processSplitters() end
+  if(computer.millis() - lastRefillTime > refillTimeOut) then
+   print2Screen(lowInventories)
+   displayModeInfo("Time out reached")
+   n = 0
+  else
+   n = tableLength(lowInventories)
+  end
  end
  currentMode = modes.processing
- displayModeInfo()
 end
 
 -- cycle through all coadable splitters and cause them to transfer an item if able but not in the direction of the tickle trunk
@@ -243,6 +249,7 @@ end
 modes = {processing = 0, refilling = 1, stopped = 2}
 currentMode = modes.processing
 direction = {left = 0, middle = 1, right = 2}
+refillTimeOut = 5 * 60 * 1000 --5 min in ms
 
 container = component.proxy("08BC875F4652A329EBC31793BFECB856")
 panel = component.proxy("728C909D46AD5BBCC0F910AD60CE19F7")
@@ -260,7 +267,7 @@ gpu:bindScreen(screen)
 clearScreen()
 
 greedyMode = false
-progTime = computer.millis()
+progTime = computer.millis() -- progress time
 itemsInTransit = 0
 
 event.clear()
