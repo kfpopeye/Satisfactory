@@ -187,7 +187,10 @@ function refillContainer()
    if(intName) then
     local spltr = findSplitter(intName)
     if(spltr) then
-     if(spltr:transferItem(getDefinedOutput(spltr))) then
+     local dir = getDefinedOutput(spltr)
+     if (dir == -1) then
+      print("No output direction defined for:", spltr.nick)
+     elseif(spltr:transferItem(dir)) then
       itemsInTransit = itemsInTransit + 1
       lowInventories[intName]["count"] = lowInventories[intName]["count"] + 1
       print("Refilling at:", spltr.nick)
@@ -217,7 +220,7 @@ function processSplitters()
    if(v ~= defOut) then
     if (splitter:canOutput(v) and splitter:getInput()) then
      if(splitter:transferItem(v)) then
-      print("Processing at:", v, splitter.nick)
+      print("Processing at:", t, splitter.nick)
      end
     end
    end
