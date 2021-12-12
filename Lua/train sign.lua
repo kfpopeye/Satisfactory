@@ -13,7 +13,7 @@ function print2Tab(trn)
  if (trn.hasTimeTable) then
   local t_table = trn:getTimeTable()
   local x = t_table:getCurrentStop()
-  if (x == 0 ) then x = 6 end --t_table:getCurrentStop() returns 0 when at the last station
+  if (x == 0 ) then x = t_table.numStops end --t_table:getCurrentStop() returns 0 when at the last station
   if(trn.isDocked) then
    gpu2:setText(0, 1, "Docked at station: " .. t_table:getStops()[x].station.name)
   else
