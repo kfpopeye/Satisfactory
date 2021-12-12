@@ -1,28 +1,32 @@
 --120x30 resolution
-function print2Tab(t)
+function print2Tab(trn)
  clearScreen(gpu2)
  gpu2:setBackground(0, 0, 0, 0)
  gpu2:setForeground(1, 1, 1, 1)
  local s = nil
- if(t.isSelfDriving) then
-  s = "Train: " .. t:getName() .. " (Autopilot: On)"
+ if(trn.isSelfDriving) then
+  s = "Train: " .. trn:getName() .. " (Autopilot: On)"
  else
-  s = "Train: " .. t:getName() .. " (Autopilot: Off)"
+  s = "Train: " .. trn:getName() .. " (Autopilot: Off)"
  end
  gpu2:setText(0, 0, s)
- local t_table = t:getTimeTable()
- if(t.isDocked and t_table:getStops()) then --time table resets at hub station?
-  gpu2:setText(0, 1, "Docked at station: " .. t_table:getStops()[t_table:getCurrentStop()].station.name)
- else
-  gpu2:setText(0, 1, "On route")
-  printCargo(t)
+ if (trn.hasTimeTable) then
+  local t_table = trn:getTimeTable()
+  local x = t_table:getCurrentStop()
+  if (x == 0 ) then x = 6 end --t_table:getCurrentStop() returns 0 when at the last station
+  if(trn.isDocked) then
+   gpu2:setText(0, 1, "Docked at station: " .. t_table:getStops()[x].station.name)
+  else
+   gpu2:setText(0, 1, "On route from: ".. t_table:getStops()[x].station.name)
+   printCargo(trn)
+  end
+  gpu2:setText(0, 2, "Next station: " .. t_table:getStops()[t_table:getCurrentStop() + 1].station.name)
+  local stops = "Schedule: "
+  for x, stn in pairs(t_table:getStops()) do
+   stops = stops .. x .. stn.station.name .. " -> "
+  end
+  gpu2:setText(0, 3, stops)
  end
- gpu2:setText(0, 2, "Next station: " .. t_table:getStops()[t_table:getCurrentStop() + 1].station.name)
- local stops = "Schedule: "
- for _, stn in pairs(t_table:getStops()) do
-  stops = stops .. stn.station.name .. " -> "
- end
- gpu2:setText(0, 3, stops)
  gpu2:flush()
 end
 
