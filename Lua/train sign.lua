@@ -5,13 +5,13 @@ function print2Tab(t)
  gpu2:setForeground(1, 1, 1, 1)
  local s = nil
  if(t.isSelfDriving) then
-  s ="Train: " .. t:getName() .. " (Autopilot: On)"
+  s = "Train: " .. t:getName() .. " (Autopilot: On)"
  else
   s = "Train: " .. t:getName() .. " (Autopilot: Off)"
  end
  gpu2:setText(0, 0, s)
  local t_table = t:getTimeTable()
- if(t.isDocked) then
+ if(t.isDocked and t_table:getStops()) then --time table resets at hub station?
   gpu2:setText(0, 1, "Docked at station: " .. t_table:getStops()[t_table:getCurrentStop()].station.name)
  else
   gpu2:setText(0, 1, "On route")
@@ -114,13 +114,15 @@ clearScreen(gpu2)
 
 while true do
  local train = station:getTrackGraph():getTrains()[1]
- local t_table = train:getTimeTable()
- if(t_table:getCurrentStop()) then
-  nextStop = t_table:getStops()[t_table:getCurrentStop() + 1].station.name
- else
-  nextSop = "Unknown"
+ if(not train.isPlayerDriven) then
+  local t_table = train:getTimeTable()
+  if(t_table:getCurrentStop()) then
+   nextStop = t_table:getStops()[t_table:getCurrentStop() + 1].station.name
+  else
+   nextSop = "Unknown"
+  end
+  print2Tab(train)
+  printScreen(nextStop)
  end
- print2Tab(train)
- printScreen(nextStop)
  event.pull(2)
 end
