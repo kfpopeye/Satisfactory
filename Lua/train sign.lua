@@ -23,7 +23,7 @@ function print2Tab(trn)
   gpu2:setText(0, 2, "Next station: " .. t_table:getStops()[t_table:getCurrentStop() + 1].station.name)
   local stops = "Schedule: "
   for x, stn in pairs(t_table:getStops()) do
-   stops = stops .. x .. stn.station.name .. " -> "
+   stops = stops .. stn.station.name .. " -> "
   end
   gpu2:setText(0, 3, stops)
  end
