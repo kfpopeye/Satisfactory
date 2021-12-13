@@ -1,4 +1,4 @@
---120x30 resolution
+--120x50 resolution
 function print2Tab(trn)
  clearScreen(gpu2)
  gpu2:setBackground(0, 0, 0, 0)
@@ -13,7 +13,7 @@ function print2Tab(trn)
  if (trn.hasTimeTable) then
   local t_table = trn:getTimeTable()
   local x = t_table:getCurrentStop()
-  if (x == 0 ) then x = t_table.numStops end --t_table:getCurrentStop() returns 0 when at the last station
+  if (x == 0 ) then x = t_table.numStops end --t_table:getCurrentStop() returns 0 when at the last station HACK
   if(trn.isDocked) then
    gpu2:setText(0, 1, "Docked at station: " .. t_table:getStops()[x].station.name)
   else
@@ -47,6 +47,7 @@ function printInventory(invs, col)
    row = row + 1
   end
   i = i + 1
+  if(i == invs.Size and row > 6) then gpu2:setText(col, row, "Slots used: " .. (row - 6) .. "/32") end
  end
  return row > 6
 end
@@ -101,7 +102,7 @@ local gpus = computer.getPCIDevices(findClass("GPUT1"))
 gpu = gpus[1]
 if not gpu then error("No GPU T1 found!") end
 
-local screen = component.proxy("B58895234477BC6EC6C3FCAC68B3A392")
+local screen = component.proxy("155E588F4D5629E5D08EBEA80447C19B")
 if not screen then error("No screen") end
 
 gpu:bindScreen(screen)
@@ -111,9 +112,10 @@ clearScreen(gpu)
 local tabScreen = computer.getPCIDevices(findClass("FINComputerScreen"))[1]
 if not screen then error("No Screen tab found!") end
 gpu2 = gpus[2]
-if not gpu then error("No GPU T1 found!") end
+if not gpu2 then error("No GPU T1 found!") end
 
 gpu2:bindScreen(tabScreen)
+gpu2:setSize(120, 50)
 clearScreen(gpu2)
 
 while true do
