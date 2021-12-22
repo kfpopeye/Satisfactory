@@ -1,25 +1,30 @@
---120x50 resolution
+--print train information to screen tab (120x50 resolution)
 function print2Tab(trn)
  clearScreen(gpu2)
  gpu2:setBackground(0, 0, 0, 0)
  gpu2:setForeground(1, 1, 1, 1)
  local s = nil
+  -- print train name and autopilot setting
  if(trn.isSelfDriving) then
   s = "Train: " .. trn:getName() .. " (Autopilot: On)"
  else
   s = "Train: " .. trn:getName() .. " (Autopilot: Off)"
  end
  gpu2:setText(0, 0, s)
+ 
  if (trn.hasTimeTable) then
   local t_table = trn:getTimeTable()
   local x = t_table:getCurrentStop()
-  if (x == 0 ) then x = t_table.numStops end --t_table:getCurrentStop() returns 0 when at the last station HACK
+  if (x == 0 ) then x = t_table.numStops end --t_table:getCurrentStop() returns 0 when at the last station
   if(trn.isDocked) then
    gpu2:setText(0, 1, "Docked at station: " .. t_table:getStops()[x].station.name)
   else
+   -- if train is moving print current cargo manifest
    gpu2:setText(0, 1, "On route from: ".. t_table:getStops()[x].station.name)
    printCargo(trn)
   end
+  
+  --print next stop and schedule information
   gpu2:setText(0, 2, "Next station: " .. t_table:getStops()[t_table:getCurrentStop() + 1].station.name)
   local stops = "Schedule: "
   for x, stn in pairs(t_table:getStops()) do
@@ -30,6 +35,7 @@ function print2Tab(trn)
  gpu2:flush()
 end
 
+--print the rail car inventory and # of slots used to a column on the tab screen
 function printInventory(invs, col)
  local i = 0
  local row = 6
@@ -52,6 +58,7 @@ function printInventory(invs, col)
  return row > 6
 end
 
+--iterate through rail vehicles to see if they have an inventory
 function printCargo(t)
  local dir = 0
  local column = 0
@@ -65,7 +72,7 @@ function printCargo(t)
  end
 end
 
---20x3 resolution
+--print next stop info to large screen(20x3 resolution)
 function printScreen(str)
  print("Screen output:", str)
  clearScreen(gpu)
