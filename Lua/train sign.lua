@@ -39,7 +39,7 @@ end
 function printInventory(invs, col)
  local i = 0
  local row = 6
- invs:sort()
+ --invs:sort() --causes Satisfactory to crash occasionally
  gpu2:setText(0, 5, "Inventories -----------------------------------------------------------------------------------------------")
  while (i < invs.Size) do
   local t = nil
