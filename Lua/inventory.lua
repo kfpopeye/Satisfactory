@@ -12,7 +12,7 @@ function printResults2Screen(invList)
  clearScreen()
  gpu:setBackground(0,0,0,0)
  gpu:setForeground(1,1,1,1)
- if(tableLength(invList > 0)) then
+ if(tableLength(invList) > 0) then
   gpu:setText(0, 0, "A splitter for the following items could not be found:")
   printTable2TabScreen(invList, 1)
  else
