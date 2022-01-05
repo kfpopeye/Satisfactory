@@ -1,14 +1,22 @@
--- takes a structured table and outputs it to the screen tab
-function print2Screen(invList)
+-- takes an inventory table and outputs it to the screen tab
+function printTable2TabScreen(invTable, row)
+ for n, s in pairs(invTable) do
+  gpu:setText(0, row, s["name"] .. ": " .. s["count"] .. "/" .. s["max"])
+  row = row + 1
+ end
+end
+
+-- output refill results to the screen tab
+function printResults2Screen(invList)
 -- resolution 120x30
  clearScreen()
  gpu:setBackground(0,0,0,0)
  gpu:setForeground(1,1,1,1)
- gpu:setText(0, 0, "Inventory List")
- local i = 1
- for n, s in pairs(invList) do
-  gpu:setText(0, i, n .. ": " .. s["count"] .. "/" .. s["max"])
-  i = i + 1
+ if(tableLength(invList > 0)) then
+  gpu:setText(0, 0, "A splitter for the following items could not be found:")
+  printTable2TabScreen(invList, 1)
+ else
+  gpu:setText(0, 0, "Refill successful.")
  end
  gpu:flush()
 end
@@ -30,19 +38,17 @@ function displayModeInfo(str)
  local display = panel:getModule(1, 0)
  display.size = 30
  display.text = " "
+
  if(str) then
   if(#modeBuffer == 4) then table.remove(modeBuffer, 2) end
   table.insert(modeBuffer, str)
-  -- output buffer to display
-  local txt = nil
-  for _, s in pairs(modeBuffer) do
-   if(txt) then txt = txt .. s .. "\n" else txt = s .. "\n" end
-  end
-  display.text = txt
- else
-  modeBuffer = {}
-  modeBuffer[1] = "      Mode Information"
  end
+ -- output buffer to display
+ local txt = nil
+ for _, s in pairs(modeBuffer) do
+  if(txt) then txt = txt .. s .. "\n" else txt = s .. "\n" end
+ end
+ display.text = txt
 end
 
 --displays general information to the upper text display
@@ -133,7 +139,7 @@ function checkEvents()
  end
 end
 
---scans the container and creates a list of anything that a partial stack
+--scans the container and creates a list of anything thats a partial stack
 function createInventoryList()
  local lowInventories = {}
  local invs = container:getInventories()[1]
@@ -146,8 +152,8 @@ function createInventoryList()
    local c = stack.count
    local m = t.max
    local intName = t.internalName
+   local name = t.name
    if(c < m) then
-    local intName = t.internalName
     if(lowInventories[intName]) then
      lowInventories[intName]["max"] = lowInventories[intName]["max"] + m
      lowInventories[intName]["count"] = lowInventories[intName]["count"] + c
@@ -155,6 +161,7 @@ function createInventoryList()
      local info = {}
      info["max"] = m
      info["count"] = c
+     info["name"] = name
      lowInventories[intName] = info
     end
    end
@@ -176,6 +183,7 @@ end
 --main loop when refilling the container
 function refillContainer()
  local lastRefillTime = computer.millis()
+ clearScreen()
  displayModeInfo()
  itemsInTransit = 0
  local lowInventories = createInventoryList()
@@ -207,13 +215,13 @@ function refillContainer()
   checkEvents()
   if(not greedyMode) then processSplitters() end
   if(computer.millis() - lastRefillTime > refillTimeOut) then
-   print2Screen(lowInventories)
    displayModeInfo("Time out reached")
    n = 0
   else
    n = tableLength(lowInventories)
   end
  end
+ printResults2Screen(lowInventories)
  currentMode = modes.processing
 end
 
