@@ -1,5 +1,7 @@
 battery = component.proxy("3909A0A2414FAE74945E39B4BA310CF0")
+if not battery then error("No battery found!") end
 light = component.proxy("ED45EBA041045EB6E9909A8E10FA4904")
+if not light then error("No light found!") end
 
 circuit = battery:getPowerConnectors()[1]:getCircuit()
 
