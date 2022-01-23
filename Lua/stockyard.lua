@@ -11,7 +11,7 @@ function tableLength(T)
   return count
 end
 
-function printCountainer(col, row, percentage, name)
+function printContainer(col, row, percentage, name)
  if (percentage < 50) then
   gpu:setForeground(1,0,0,1)
  elseif (percentage < 75) then
@@ -24,7 +24,8 @@ end
 
 function updateOutput()
  clearScreen(gpu)
- local containers = component.proxy(component.findComponent(findClass("Build_StorageContainerMk2_C")))
+ local containers = component.proxy(component.findComponent("stockyard"))
+ if not containers then error("Containers was nil") end
  local x = tableLength(containers)
  gpu:setBackground(0, 0.5, 1.0, 0.5)
  gpu:setForeground(0, 0, 0, 1)
@@ -33,44 +34,53 @@ function updateOutput()
  gpu:setForeground(1,1,1,1)
 
  local row = 1
+ local col = 0
  local emptyContainers = 0
  for _, cntr in pairs(containers) do
-  if(cntr.nick == "container") then goto continue end
+  --print ("Type: " .. cntr:getType().displayName)
   local invs = cntr:getInventories()[1]
   local count = 0
   local max = 0
   local name = "*********"
   local i = 0
 
-  while (i < invs.Size) do
-   local t = nil
-   local stack = invs:getStack(i)
-   if (stack.item) then 
-    t = stack.item.type
-   end
-   if(t) then
-    count = count + stack.count
-    max = t.max * invs.Size
-    name = t.name
-   end
-   i = i + 1
-  end --while
+  if(invs) then -- fluid buffers do not have an inventory
+   while (i < invs.Size) do
+    local t = nil
+    local stack = invs:getStack(i)
+    if (stack.item) then 
+     t = stack.item.type
+    end
+    if(t) then
+     count = count + stack.count
+     max = t.max * invs.Size
+     name = t.name
+    end
+    i = i + 1
+   end --while
+  else
+   count = cntr.fluidContent
+   max = cntr.maxFluidContent
+   name = cntr:getFluidType().name
+  end
 
   if(count > 0) then
    percentage = math.floor(count / max * 100)
-   printCountainer(0, row, percentage, name)
+   printContainer(0, row, percentage, name)
    row = row + 1
+   if (row == 12) then
+    row = 1
+    col = 27
+   end
   else
    emptyContainers = emptyContainers + 1
   end
-  ::continue::
  end
 
  gpu:setForeground(1,1,1,1)
- gpu:setText(0, 11, "Empty containers: " .. emptyContainers)
+ gpu:setText(col, row, "Empty containers: " .. emptyContainers)
  gpu:flush()
  print("Containers found: " .. x)
- print("Containers reported: " .. row - 1)
  print("Empty containers: " .. emptyContainers)
 end
 
