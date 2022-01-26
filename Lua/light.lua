@@ -25,8 +25,6 @@ function updateScreen()
  gpu:flush()
 end
 
-battery = component.proxy("3909A0A2414FAE74945E39B4BA310CF0")
-if not battery then error("No battery found!") end
 light = component.proxy("ED45EBA041045EB6E9909A8E10FA4904")
 if not light then error("No light found!") end
 
@@ -37,7 +35,7 @@ if not gpu then error("No GPU T1 found!") end
 gpu:bindScreen(tabScreen)
 gpu:setSize(120, 50)
 
-circuit = battery:getPowerConnectors()[1]:getCircuit()
+circuit = light:getPowerConnectors()[1]:getCircuit()
 
 productionMax = circuit.production
 productionMin = circuit.production
