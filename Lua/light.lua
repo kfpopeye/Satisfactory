@@ -54,5 +54,5 @@ while true do
   updateScreen()
 
   print(computer.millis(), circuit.batteryStorePercent * 100, "%")
-  event.pull(10.0)
+  event.pull(5.0)
 end
