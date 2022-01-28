@@ -43,6 +43,10 @@ function printInventory(invs, col)
   if(t) then
    local c = stack.count
    local m = t.max
+   if (t.form == 3) then  --gas
+    c = c // 1000
+    m = "1600"
+   end
    local n = string.sub(t.name, 1, 20)
    gpu2:setText(col, row, n .. ": " .. c .. "/" .. m)
    row = row + 1
