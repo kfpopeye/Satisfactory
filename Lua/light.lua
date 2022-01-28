@@ -25,28 +25,29 @@ function updateScreen()
  gpu:flush()
 end
 
-light = component.proxy("ED45EBA041045EB6E9909A8E10FA4904")
-if not light then error("No light found!") end
+function main()
+ local tabScreen = computer.getPCIDevices(findClass("FINComputerScreen"))[1]
+ if not tabScreen then error("No Screen tab found!") end
+ gpu = computer.getPCIDevices(findClass("GPUT1"))[1]
+ if not gpu then error("No GPU T1 found!") end
+ gpu:bindScreen(tabScreen)
+ gpu:setSize(120, 50)
 
-local tabScreen = computer.getPCIDevices(findClass("FINComputerScreen"))[1]
-if not tabScreen then error("No Screen tab found!") end
-gpu = computer.getPCIDevices(findClass("GPUT1"))[1]
-if not gpu then error("No GPU T1 found!") end
-gpu:bindScreen(tabScreen)
-gpu:setSize(120, 50)
+ circuit = light:getPowerConnectors()[1]:getCircuit()
+ if (not circuit) then error("Circuit was nil") end
 
-circuit = light:getPowerConnectors()[1]:getCircuit()
+ light.colorSlot = 0 --white
 
-productionMax = circuit.production
-productionMin = circuit.production
+ productionMax = circuit.production
+ productionMin = circuit.production
 
-while true do
+ while true do
   if (circuit.batteryStorePercent <= 0.75) then
-   light.colorSlot = 1
+   light.colorSlot = 1 --red
   elseif (circuit.batteryStorePercent < 1.0) then
-   light.colorSlot = 2
+   light.colorSlot = 2 --yellow
   else
-   light.colorSlot = 3
+   light.colorSlot = 3 --green
   end
 
   if (circuit.production > productionMax) then productionMax = circuit.production end
@@ -55,4 +56,14 @@ while true do
 
   print(computer.millis(), circuit.batteryStorePercent * 100, "%")
   event.pull(5.0)
+ end
+end
+
+light = component.proxy("ED45EBA041045EB6E9909A8E10FA4904")
+if not light then error("No light found!") end
+
+local status, err = pcall(main)
+if not status then
+ light.colorSlot = 0
+ print(err)
 end
