@@ -217,13 +217,12 @@ function refillContainer()
     end
    end
   end
-  displayModeInfo()
+
   if(itemsInTransit > 0) then displayModeInfo("Items transitting: " .. itemsInTransit) end
   displayModeInfo("Filling " .. n .. " slots.")
   checkEvents()
   if(not greedyMode) then processSplitters() end
   if(computer.millis() - lastRefillTime > refillTimeOut) then
-   displayModeInfo()
    displayModeInfo("Time out reached")
    n = 0
   else
@@ -256,7 +255,7 @@ end
 function loop()
  while true do
   checkEvents()
-  if(itemsInTransit > 0) then displayModeInfo("Items transitting: " .. itemsInTransit) else displayModeInfo() end
+  if(itemsInTransit > 0) then displayModeInfo("Items transitting: " .. itemsInTransit) end
   button:setColor(0, 0, 1, 5)
   processSplitters()
   indicateProgress()
