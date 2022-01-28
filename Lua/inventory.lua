@@ -32,7 +32,12 @@ end
 -- displays information while refilling to the lower text display
 -- if param is nil then buffer is cleared
 function displayModeInfo(str)
- if(not modeBuffer) then modeBuffer = {} end
+ if (not modeBuffer) then
+  modeBuffer = {}
+ elseif (not str) then
+  for k,v in pairs(modeBuffer) do modeBuffer[k]=nil end
+ end
+
  -- line 1 reserved for title
  modeBuffer[1] = "      Mode Information"
  local display = panel:getModule(1, 0)
@@ -41,12 +46,13 @@ function displayModeInfo(str)
 
  if(str) then
   if(#modeBuffer == 4) then table.remove(modeBuffer, 2) end
-  table.insert(modeBuffer, str)
+  table.insert(modeBuffer, str)  
  end
+
  -- output buffer to display
  local txt = nil
  for _, s in pairs(modeBuffer) do
-  if(txt) then txt = txt .. s .. "\n" else txt = s .. "\n" end
+  if (txt) then txt = txt .. s .. "\n" else txt = s .. "\n" end
  end
  display.text = txt
 end
@@ -211,13 +217,13 @@ function refillContainer()
     end
    end
   end
-  displayModeInfo(nil)
+  displayModeInfo()
   if(itemsInTransit > 0) then displayModeInfo("Items transitting: " .. itemsInTransit) end
   displayModeInfo("Filling " .. n .. " slots.")
   checkEvents()
   if(not greedyMode) then processSplitters() end
   if(computer.millis() - lastRefillTime > refillTimeOut) then
-   displayModeInfo(nil)
+   displayModeInfo()
    displayModeInfo("Time out reached")
    n = 0
   else
