@@ -188,6 +188,7 @@ function refillContainer()
  itemsInTransit = 0
  local lowInventories = createInventoryList()
  local n = tableLength(lowInventories)
+
  while(n > 0) do
   currentMode = modes.refilling
   indicateProgress()
@@ -215,12 +216,15 @@ function refillContainer()
   checkEvents()
   if(not greedyMode) then processSplitters() end
   if(computer.millis() - lastRefillTime > refillTimeOut) then
+   displayModeInfo(nil)
    displayModeInfo("Time out reached")
    n = 0
   else
    n = tableLength(lowInventories)
   end
  end
+
+ displayModeInfo(nil)
  printResults2Screen(lowInventories)
  currentMode = modes.processing
 end
