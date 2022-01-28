@@ -211,6 +211,7 @@ function refillContainer()
     end
    end
   end
+  displayModeInfo(nil)
   if(itemsInTransit > 0) then displayModeInfo("Items transitting: " .. itemsInTransit) end
   displayModeInfo("Filling " .. n .. " slots.")
   checkEvents()
@@ -223,8 +224,7 @@ function refillContainer()
    n = tableLength(lowInventories)
   end
  end
-
- displayModeInfo(nil)
+ 
  printResults2Screen(lowInventories)
  currentMode = modes.processing
 end
