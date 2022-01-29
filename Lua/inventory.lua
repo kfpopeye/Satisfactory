@@ -194,7 +194,12 @@ function refillContainer()
  local slotsToRefill = createInventoryList()
  local numSlotsToRefill = tableLength(slotsToRefill)
 
---line 197
+ if (numSlotsToRefill == 0) then
+  displayModeInfo("No slots need refilling")
+  return
+ end
+
+--line 202
  while(numSlotsToRefill > 0) do --main loop when refilling the container
   currentMode = modes.refilling
   indicateProgress()
