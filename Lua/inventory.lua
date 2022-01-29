@@ -186,19 +186,20 @@ function tableLength(T)
   return count
 end
 
---main loop when refilling the container
 function refillContainer()
- local lastRefillTime = computer.millis()
+ local lastTransferTime = computer.millis()
  clearScreen()
  displayModeInfo()
  itemsInTransit = 0
- local lowInventories = createInventoryList()
- local n = tableLength(lowInventories)
+ local slotsToRefill = createInventoryList()
+ local numSlotsToRefill = tableLength(slotsToRefill)
 
- while(n > 0) do
+--line 197
+ while(numSlotsToRefill > 0) do --main loop when refilling the container
   currentMode = modes.refilling
   indicateProgress()
-  for intName, infoTable in pairs(lowInventories) do
+
+  for intName, infoTable in pairs(slotsToRefill) do
    if(intName) then
     local spltr = findSplitter(intName)
     if(spltr) then
@@ -206,12 +207,12 @@ function refillContainer()
      if (dir == -1) then
       print("No output direction defined for:", spltr.nick)
      elseif(spltr:transferItem(dir)) then
-      lastRefillTime = computer.millis()
+      lastTransferTime = computer.millis()
       itemsInTransit = itemsInTransit + 1
-      lowInventories[intName]["count"] = lowInventories[intName]["count"] + 1
+      slotsToRefill[intName]["count"] = slotsToRefill[intName]["count"] + 1
       print("Refilling at:", spltr.nick)
      end
-     if(lowInventories[intName]["count"] >= lowInventories[intName]["max"]) then lowInventories[intName] = nil end
+     if(slotsToRefill[intName]["count"] >= slotsToRefill[intName]["max"]) then slotsToRefill[intName] = nil end
     else
      print("No splitter has: " .. intName)
     end
@@ -219,18 +220,18 @@ function refillContainer()
   end
 
   if(itemsInTransit > 0) then displayModeInfo("Items transitting: " .. itemsInTransit) end
-  displayModeInfo("Filling " .. n .. " slots.")
+  displayModeInfo("Filling " .. numSlotsToRefill .. " slots.")
   checkEvents()
   if(not greedyMode) then processSplitters() end
-  if(computer.millis() - lastRefillTime > refillTimeOut) then
+  if(computer.millis() - lastTransferTime > refillTimeOut) then
    displayModeInfo("Time out reached")
-   n = 0
+   numSlotsToRefill = 0
   else
-   n = tableLength(lowInventories)
+   numSlotsToRefill = tableLength(slotsToRefill)
   end
  end
  
- printResults2Screen(lowInventories)
+ printResults2Screen(slotsToRefill)
  currentMode = modes.processing
 end
 
