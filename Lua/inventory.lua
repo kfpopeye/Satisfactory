@@ -71,7 +71,10 @@ function displaySystemInfo()
  -- line 3 reserved for greedy mode
  if(greedyMode) then infoBuffer[3] = "Greedy mode: On" else infoBuffer[3] = "Greedy mode: Off" end
  -- line 4 reserved for current mode
- if(currentMode == modes.refilling) then infoBuffer[4] = "Mode: Refilling" else infoBuffer[4] = "Mode: Processing" end
+ if(currentMode == modes.refilling) then infoBuffer[4] = "Mode: Refilling" end
+ if(currentMode == modes.paused) then infoBuffer[4] = "Mode: Paused" end
+ if(currentMode == modes.processing) then infoBuffer[4] = "Mode: Processing" end
+ if(currentMode == modes.stopped) then infoBuffer[4] = "Mode: Stopped" end
 
  -- output buffer to display
  local txt = nil
@@ -92,6 +95,20 @@ function indicateProgress(reset)
  end
  if(computer.millis() - progTime > 4000) then
   progTime = computer.millis()
+ end
+end
+
+function setPauseButtons()
+ local panels = component.proxy(component.findComponent("pauseMCP"))
+ if panels then
+  for _, MCPpanel in pairs(panels) do
+   local pbutton = MCPpanel:getModule(0, 0)
+   if (currentMode == modes.paused or currentMode == modes.stopped) then
+    pbutton:setColor(1, 0, 0, 5)
+   else
+    pbutton:setColor(0, 1, 0, 2)
+   end
+  end
  end
 end
 
@@ -132,11 +149,19 @@ function checkEvents()
   refillContainer()
  elseif (e == "Trigger" and sender == stopButton) then
   currentMode = modes.stopped
+  setPauseButtons()
   indicateProgress()
   button:setColor(0, 0, 1, 5)
   indicatorLight:setColor(1, 0, 0, 5)
   computer.beep()
   computer.stop()
+ elseif (e == "Trigger" and tableContains(pauseHashes, sender.hash)) then
+  if (currentMode == modes.paused) then
+   currentMode = modes.processing
+  else
+   currentMode = modes.paused
+  end
+  setPauseButtons()
  elseif (e == "ChangeState" and sender == lever) then
   computer.beep()
   greedyMode = not greedyMode
@@ -186,6 +211,13 @@ function tableLength(T)
   return count
 end
 
+function tableContains (T, h)
+ for _, value in pairs(T) do
+  if (value == h) then return true end
+ end
+ return false
+end
+
 function refillContainer()
  local lastTransferTime = computer.millis()
  clearScreen()
@@ -199,7 +231,6 @@ function refillContainer()
   return
  end
 
---line 202
  while(numSlotsToRefill > 0) do --main loop when refilling the container
   currentMode = modes.refilling
   indicateProgress()
@@ -263,18 +294,24 @@ function loop()
   checkEvents()
   if(itemsInTransit > 0) then displayModeInfo("Items transitting: " .. itemsInTransit) end
   button:setColor(0, 0, 1, 5)
-  processSplitters()
+  if not (currentMode == modes.paused) then
+   processSplitters()
+  end
   indicateProgress()
  end
 end
 
 --main chunk (setup)
-modes = {processing = 0, refilling = 1, stopped = 2}
+modes = {processing = 0, refilling = 1, stopped = 2, paused = 3}
 currentMode = modes.processing
 direction = {left = 0, middle = 1, right = 2}
 refillTimeOut = 5 * 60 * 1000 --5 min in ms
+greedyMode = false
+progTime = computer.millis() -- progress time
+itemsInTransit = 0
 
 container = component.proxy("08BC875F4652A329EBC31793BFECB856")
+
 panel = component.proxy("728C909D46AD5BBCC0F910AD60CE19F7")
 lever = panel:getModule(5, 0)
 indicatorLight = panel:getModule(0, 3)
@@ -289,11 +326,20 @@ if not gpu then error("No GPU T1 found!") end
 gpu:bindScreen(screen)
 clearScreen()
 
-greedyMode = false
-progTime = computer.millis() -- progress time
-itemsInTransit = 0
-
 event.clear()
+print("Finding pause buttons")
+pauseHashes = {}
+local panels = component.proxy(component.findComponent("pauseMCP"))
+if panels then
+ for _, MCPpanel in pairs(panels) do
+  local pbutton = MCPpanel:getModule(0, 0)
+  event.listen(pbutton)
+  table.insert(pauseHashes, pbutton.hash)
+  print(pbutton.hash)
+ end
+end
+setPauseButtons()
+
 for _, connector in pairs(container:getFactoryConnectors()) do event.listen(connector) end
 event.listen(lever)
 event.listen(button)
