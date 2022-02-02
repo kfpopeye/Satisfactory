@@ -56,13 +56,14 @@ end
 
 function updateOutput()
  clearScreen(gpu)
- local containers = component.proxy(component.findComponent("stockyard"))
- if not containers then error("Containers was nil") end
  gpu:setBackground(0, 0.5, 1.0, 0.5)
  gpu:setForeground(0, 0, 0, 1)
  gpu:setText(0, 0, string.format("%-54s", "Stockyard Inventory")) --55 chars (padded with spaces after)
  gpu:setBackground(0,0,0,0)
  gpu:setForeground(1,1,1,1)
+
+ local containers = component.proxy(component.findComponent("stockyard"))
+ if not containers then error("Containers was nil") end
 
  local row = 1
  local col = 0
@@ -78,9 +79,7 @@ function updateOutput()
    while (i < invs.Size) do
     local t = nil
     local stack = invs:getStack(i)
-    if (stack.item) then 
-     t = stack.item.type
-    end
+    if (stack.item) then t = stack.item.type end
     if(t) then
      count = count + stack.count
      max = t.max * invs.Size
@@ -101,7 +100,7 @@ function updateOutput()
   end
 
   percentage = math.floor(count / max * 100)
-  printContainer(0, row, percentage, name)
+  printContainer(col, row, percentage, name)
   row = row + 1
   if (row == 12) then
    row = 1
