@@ -1,3 +1,25 @@
+function catalogContainers()
+ local containers = component.proxy(component.findComponent("stockyard"))
+ if not containers then error("Containers was nil") end
+ for _, cntr in pairs(containers) do
+  local invs = cntr:getInventories()[1]
+  local name = "Unnamed"
+
+  if(invs) then -- fluid buffers do not have an inventory
+   local t = nil
+   local stack = invs:getStack(0)
+   if (stack and stack.item) then t = stack.item.type end
+   if(t) then name = t.name end
+  else
+   name = cntr:getFluidType().name
+  end
+
+  print (cntr.hash, name)
+  containerHashAndName[cntr.hash] = name
+ end
+ print("Containers found: " .. tableLength(containerHashAndName))
+end
+
 function clearScreen(g)
  local w,h = g:getSize()
  g:setBackground(0, 0, 0, 0)
@@ -11,22 +33,31 @@ function tableLength(T)
   return count
 end
 
-function printContainer(col, row, percentage, name)
- if (percentage < 50) then
-  gpu:setForeground(1,0,0,1)
- elseif (percentage < 75) then
-  gpu:setForeground(1,1,0,1)
- else
-  gpu:setForeground(1,1,1,1)
+function tableContains (T, h)
+ for _, value in pairs(T) do
+  if (value == h) then return true end
  end
- gpu:setText(col, row, string.format("%-20s", name) .. percentage .. "%")
+ return false
+end
+
+function printContainer(col, row, percentage, name)
+ gpu:setForeground(1,1,1,1)
+ if not (name == "Unnamed") then
+  if (percentage < 50) then
+   gpu:setForeground(1,0,0,1)
+  elseif (percentage < 75) then
+   gpu:setForeground(1,1,0,1)
+  end
+ else
+  gpu:setForeground(0.25,0.25,0.25,1)
+ end
+ gpu:setText(col, row, string.format("%-20s", name) .. string.format("%3s", percentage) .. "%")
 end
 
 function updateOutput()
  clearScreen(gpu)
  local containers = component.proxy(component.findComponent("stockyard"))
  if not containers then error("Containers was nil") end
- local x = tableLength(containers)
  gpu:setBackground(0, 0.5, 1.0, 0.5)
  gpu:setForeground(0, 0, 0, 1)
  gpu:setText(0, 0, string.format("%-54s", "Stockyard Inventory")) --55 chars (padded with spaces after)
@@ -35,13 +66,12 @@ function updateOutput()
 
  local row = 1
  local col = 0
- local emptyContainers = 0
  for _, cntr in pairs(containers) do
   --print ("Type: " .. cntr:getType().displayName)
   local invs = cntr:getInventories()[1]
   local count = 0
-  local max = 0
-  local name = "*********"
+  local max = -1
+  local name = containerHashAndName[cntr.hash]
   local i = 0
 
   if(invs) then -- fluid buffers do not have an inventory
@@ -54,34 +84,32 @@ function updateOutput()
     if(t) then
      count = count + stack.count
      max = t.max * invs.Size
-     name = t.name
+     if (name == "Unnamed") then
+      catalogContainers()
+      name = containerHashAndName[cntr.hash]
+     end
     end
     i = i + 1
    end --while
   else
    count = cntr.fluidContent
    max = cntr.maxFluidContent
-   name = cntr:getFluidType().name
+   if (name == "Unnamed") then
+    catalogContainers()
+    name = containerHashAndName[cntr.hash]
+   end
   end
 
-  if(count > 0) then
-   percentage = math.floor(count / max * 100)
-   printContainer(0, row, percentage, name)
-   row = row + 1
-   if (row == 12) then
-    row = 1
-    col = 27
-   end
-  else
-   emptyContainers = emptyContainers + 1
+  percentage = math.floor(count / max * 100)
+  printContainer(0, row, percentage, name)
+  row = row + 1
+  if (row == 12) then
+   row = 1
+   col = 27
   end
  end
 
- gpu:setForeground(1,1,1,1)
- gpu:setText(col, row, "Empty containers: " .. emptyContainers)
  gpu:flush()
- print("Containers found: " .. x)
- print("Empty containers: " .. emptyContainers)
 end
 
 --main chunk
@@ -98,6 +126,9 @@ clearScreen(gpu)
 
 local icon = {"|", "/", "-", "\\"}
 local iconIndex = 5
+
+containerHashAndName = {}
+catalogContainers()
 
 while true do
  if(iconIndex > 4) then 
