@@ -85,8 +85,8 @@ function updateOutput()
      count = count + stack.count
      max = t.max * invs.Size
      if (name == "Unnamed") then
-      catalogContainers()
-      name = containerHashAndName[cntr.hash]
+      name = t.name
+      containerHashAndName[cntr.hash] = name
      end
     end
     i = i + 1
@@ -95,8 +95,8 @@ function updateOutput()
    count = cntr.fluidContent
    max = cntr.maxFluidContent
    if (name == "Unnamed") then
-    catalogContainers()
-    name = containerHashAndName[cntr.hash]
+    name = cntr:getFluidType().name
+    containerHashAndName[cntr.hash] = name
    end
   end
 
