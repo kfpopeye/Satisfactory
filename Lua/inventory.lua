@@ -121,8 +121,10 @@ function setPauseButtons()
  if panels then
   for _, MCPpanel in pairs(panels) do
    local pbutton = MCPpanel:getModule(0, 0)
-   if (currentMode == modes.paused or currentMode == modes.stopped) then
+   if (currentMode == modes.stopped) then
     pbutton:setColor(1, 0, 0, 5)
+   elseif (currentMode == modes.paused) then
+    pbutton:setColor(1, 1, 0, 5)
    else
     pbutton:setColor(0, 1, 0, 2)
    end
