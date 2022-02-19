@@ -1,3 +1,21 @@
+function setErrorAlerts()
+ currentMode = modes.stopped
+ setPauseButtons()
+
+ local modeDisplay = panel:getModule(1, 0)
+ modeDisplay.size = 30
+ modeDisplay.text = "******** ERROR ********"
+
+ local infoDisplay = panel:getModule(1, 2)
+ infoDisplay.size = 27
+ infoDisplay.text = "******** ERROR ********"
+
+ button:setColor(1, 0, 0, 5)
+ indicatorLight:setColor(1, 0, 0, 5)
+ computer.beep()
+ computer.stop()
+end
+
 -- takes an inventory table and outputs it to the screen tab
 function printTable2TabScreen(invTable, row)
  for n, s in pairs(invTable) do
@@ -292,7 +310,11 @@ end
 function loop()
  while true do
   checkEvents()
-  if(itemsInTransit > 0) then displayModeInfo("Items transitting: " .. itemsInTransit) end
+  if(itemsInTransit > 0) then
+   displayModeInfo("Items transitting: " .. itemsInTransit)
+  else
+   displayModeInfo()
+  end
   button:setColor(0, 0, 1, 5)
   if not (currentMode == modes.paused) then
    processSplitters()
@@ -346,4 +368,8 @@ event.listen(button)
 event.listen(stopButton)
 
 displayModeInfo()
-loop()
+local status, err = pcall(loop)
+if not status then
+ print(err)
+ setErrorAlerts()
+end
