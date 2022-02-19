@@ -32,23 +32,11 @@ function updateScreen()
 end
 
 function main()
- local tabScreen = computer.getPCIDevices(findClass("FINComputerScreen"))[1]
- if not tabScreen then error("No Screen tab found!") end
- gpu = computer.getPCIDevices(findClass("GPUT1"))[1]
- if not gpu then error("No GPU T1 found!") end
- gpu:bindScreen(tabScreen)
- gpu:setSize(120, 50)
-
- circuit = light:getPowerConnectors()[1]:getCircuit()
- if (not circuit) then error("Circuit was nil") end
-
- light.colorSlot = 0 --white
-
- productionMax = circuit.production
- productionMin = circuit.production
-
  while true do
   event.pull(5.0)
+  circuit = light:getPowerConnectors()[1]:getCircuit()
+  if (not circuit) then error("Circuit was nil") end
+
   if (circuit.hasBatteries) then
    if (circuit.batteryStorePercent <= 0.75) then
     light.colorSlot = 1 --red
@@ -68,10 +56,21 @@ function main()
 end
 
 --main chunk
+local tabScreen = computer.getPCIDevices(findClass("FINComputerScreen"))[1]
+if not tabScreen then error("No Screen tab found!") end
+gpu = computer.getPCIDevices(findClass("GPUT1"))[1]
+if not gpu then error("No GPU T1 found!") end
+gpu:bindScreen(tabScreen)
+gpu:setSize(120, 50)
 
 light = component.proxy("ED45EBA041045EB6E9909A8E10FA4904")
 if not light then error("No light found!") end
+light.colorSlot = 0 --white
 
+circuit = light:getPowerConnectors()[1]:getCircuit()
+if (not circuit) then error("Circuit was nil") end
+productionMax = circuit.production
+productionMin = circuit.production
 local status, err = pcall(main)
 if not status then
  light.colorSlot = 0
