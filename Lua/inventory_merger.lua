@@ -6,6 +6,7 @@ itemMaxLimit = 0 -- setting this to greater than 0 will fill container with this
 function clearTabScreen()
  if not hasScreen then return end
  local w,h = gpu:getSize()
+ gpu:setForeground(1,1,1,1)
  gpu:setBackground(0,0,0,0)
  gpu:fill(0,0,w,h,".")
  gpu:flush()
@@ -46,33 +47,44 @@ function updateInfo()
  gpu:setBackground(0,0,0,0)
  gpu:setForeground(1,1,1,1)
  gpu:setText(col, row, "Items transitting: " .. itemsInTransit)
- if (itemsInTransit == 0 and (not needsRefill)) then 
+ print("Items transitting: " .. itemsInTransit)
+ if itemsInTransit == 0 and not needsRefill then 
   gpu:setForeground(0,1,0,1)
   gpu:setText(col + 25, row, "**** COMPLETE ****")
   gpu:setForeground(1,1,1,1)
  end
- if (timedOut) then 
+ if timedOut then 
   gpu:setForeground(1,1,0,1)
   gpu:setText(col + 25, row, "**** TIMED OUT ****")
   gpu:setForeground(1,1,1,1)
  end
  row = row + 1
+
  gpu:setText(col, row, "Codeable mergers found: " .. mergerCount)
  row = row + 1
- gpu:setText(col, row, "Time out in: " .. convertToTime(refillTimeOut - (computer.millis() - lastTransferTime)))
-
+ local s = "Time out in: " .. convertToTime(refillTimeOut - (computer.millis() - lastTransferTime))
+ gpu:setText(col, row, s)
+ print(s)
  row = row + 2
  
  gpu:setBackground(1,1,1,1)
  gpu:setForeground(0,0,0,1)
- gpu:setText(col, row, "Items filling")
+ gpu:setText(col, row, "Items sent")
+ gpu:setBackground(0,0,0,0)
+ gpu:setForeground(1,1,0,1)
+ gpu:setText(col + 12, row, "Yellow indicates no merger found.")
  row = row + 1
 
  gpu:setBackground(0,0,0,0)
  gpu:setForeground(1,1,1,1)
  local rowStart = row
  for _, infoTable in pairs(slotsToRefill) do
-  local n = string.sub((infoTable["name"] .. "          "), 1, 10) 
+  local n = string.sub((infoTable["name"] .. "          "), 1, 10)
+  if(infoTable["mrgrId"]) then
+   gpu:setForeground(1,1,1,1)
+  else
+   gpu:setForeground(1,1,0,1) --yellow
+  end
   gpu:setText(col, row, n .. " (" .. infoTable["count"] .. "\\" .. infoTable["max"] .. ")") --"keeps colour formatting
   row = row + 1
   if (row == rowStart + 12) then
@@ -81,6 +93,7 @@ function updateInfo()
   end
  end
  gpu:flush()
+ print()
 end
 
 -- passing a string will add it to the buffer, passing nil will display buffer to screen
@@ -153,6 +166,7 @@ function createInventoryList()
      info["max"] = m
      info["count"] = c
      info["name"] = name
+     info["mrgrId"] = nil
      lowInventories[intName] = info
     end
    end
@@ -261,28 +275,26 @@ end
 function refillContainer()
  while needsRefill and not timedOut do
   needsRefill = false
-
   for intName, infoTable in pairs(slotsToRefill) do
    local dbgMsg = nil
-   if(intName) then
-    if(slotsToRefill[intName]["count"] < slotsToRefill[intName]["max"]) then
-     needsRefill = true
-     local merger, input = findMerger(intName)
-     if(merger) then
-      dbgMsg = merger.nick .. " has: " .. slotsToRefill[intName]["name"]
-      if merger.canOutput and merger:transferItem(input) then
-        lastTransferTime = computer.millis()
-        itemsInTransit = itemsInTransit + 1
-        slotsToRefill[intName]["count"] = slotsToRefill[intName]["count"] + 1
-      else
-       dbgMsg = dbgMsg .. " but cannot transfer."
-      end
+   if(slotsToRefill[intName]["count"] < slotsToRefill[intName]["max"]) then
+    needsRefill = true
+    local merger, input = findMerger(intName)
+    if(merger) then
+     slotsToRefill[intName]["mrgrId"] = merger.id
+     dbgMsg = merger.nick .. " has: " .. slotsToRefill[intName]["name"]
+     if merger.canOutput and merger:transferItem(input) then
+       lastTransferTime = computer.millis()
+       itemsInTransit = itemsInTransit + 1
+       slotsToRefill[intName]["count"] = slotsToRefill[intName]["count"] + 1
      else
-      dbgMsg = "No merger has " .. slotsToRefill[intName]["name"]
+      dbgMsg = dbgMsg .. " but cannot transfer."
      end
-     print(dbgMsg)
-     print()
+    else
+     dbgMsg = "No merger has " .. slotsToRefill[intName]["name"]
     end
+    print(dbgMsg)
+    print()
    end
    processPassthruInputs()
    updateInfo()
@@ -292,7 +304,7 @@ function refillContainer()
     print("Timed out")
    end
   end --endfor
- end
+ end -- endwhile
 end
 
 -- ***************** constants ********************
@@ -338,12 +350,10 @@ end
 --needsRefill = false
 --itemsInTransit = 100
 
-if needsRefill then
- local status, err = pcall(refillContainer)
- if not status then
-  computer.beep()
-  print(err)
- end
+local status, err = pcall(refillContainer)
+if not status then
+ computer.beep()
+ print(err)
 end
 
 while itemsInTransit > 0 and not timedOut do
