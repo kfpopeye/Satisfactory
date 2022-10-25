@@ -12,19 +12,17 @@ function createInventoryList()
    local m = t.max
    local intName = t.internalName
    local name = t.name
-   if(c < m) then
-    if(lowInventories[intName]) then
-     lowInventories[intName]["max"] = lowInventories[intName]["max"] + m
-     lowInventories[intName]["count"] = lowInventories[intName]["count"] + c
-    else
-     local info = {}
-     info["max"] = m
-     info["count"] = c
-     info["name"] = name
-     lowInventories[intName] = info
-    end
+   if(lowInventories[intName]) then
+    lowInventories[intName]["max"] = lowInventories[intName]["max"] + m
+    lowInventories[intName]["count"] = lowInventories[intName]["count"] + c
+   else
+    local info = {}
+    info["max"] = m
+    info["count"] = c
+    info["name"] = name
+    lowInventories[intName] = info
    end
-   print(i, intName, c, m)
+   print(i, lowInventories[intName], lowInventories[intName]["count"], lowInventories[intName]["max"])
   else
    print (i, "empty")
   end
@@ -51,7 +49,8 @@ end
 function main()
  while true do
   local inventory = createInventoryList()
-  setLight(tableLength(inventory))
+  local x = tableLength(inventory)
+  setLight(x)
   event.pull(15.0)
  end
 end
