@@ -12,7 +12,7 @@ end
 function makePercentage(x)
  local num = x * 100
  num = round (num)
- return num .. "%"
+ return num
 end
 
 function displayManufacturer(m)
@@ -20,13 +20,16 @@ function displayManufacturer(m)
  print(m.internalName)
  gpu:setBackground(0, 0.5, 1.0, 0.5)
  gpu:setForeground(0, 0, 0, 1)
- gpu:setText(0, 0, string.format("%-54s", "Project Component Production")) --55 chars (padded with spaces after)
+ gpu:setText(0, 0, string.format("%-55s", "Project Component Production")) --55 chars (padded with spaces after)
  gpu:setBackground(0,0,0,0)
  gpu:setForeground(1,1,1,1)
 
  gpu:setText(0, 1, "Device: " .. m.internalName)
  gpu:setText(0, 2, "Recipe: " .. m:getRecipe().Name)
- gpu:setText(0, 3, "Productivity: " .. makePercentage(m.Productivity))
+ local prod = makePercentage(m.Productivity)
+ if prod < 100 then gpu:setForeground(1,1,0,1) end
+ gpu:setText(0, 3, "Productivity: " .. prod .. "%")
+ gpu:setForeground(1,1,1,1)
 
  local invs = m:getInputInv()
  local i = 0
