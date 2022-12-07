@@ -24,7 +24,7 @@ function displayManufacturer(m)
  gpu:setBackground(0,0,0,0)
  gpu:setForeground(1,1,1,1)
 
- gpu:setText(0, 1, "Device: " .. m.internalName)
+ gpu:setText(0, 1, "Device: " .. m:getType().displayName)
  gpu:setText(0, 2, "Recipe: " .. m:getRecipe().Name)
  local prod = makePercentage(m.Productivity)
  if prod < 100 then gpu:setForeground(1,1,0,1) end
