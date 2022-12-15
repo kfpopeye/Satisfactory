@@ -78,19 +78,22 @@ function displayFactories()
  print("Number of factories: " .. tableLength(factories))
 
  local row = 0
+ local invsSize = 0
  for _, fctry in pairs(factories) do
   local output = " -> "
   row = row + 1
   local invs
   if (fctry:getType().Name == "Build_GeneratorNuclear_C") then
    invs = fctry:getInventories()[1]
+   invsSize = invs.Size
   else
    invs = fctry:getOutputInv()
+   invsSize = invs.Size - 1 -- Satisfactory reports back incorrect number HACK
   end
   --print(fctry:getType().Name .. " " .. fctry.nick .. " " .. invs.Size)
   local i = 0
 
-  while (i < invs.Size) do
+  while (i < invsSize) do
    local t = nil
    local stack = invs:getStack(i)
    if (stack.item) then t = stack.item.type end
