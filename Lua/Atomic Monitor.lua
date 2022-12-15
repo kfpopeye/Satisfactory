@@ -18,6 +18,15 @@ function tableContains (T, h)
  return false
 end
 
+function convertToTime(ms)
+ local tenths = ms // 100
+ local hh = (tenths // (60 * 60 * 10)) % 24
+ local mm = (tenths // (60 * 10)) % 60
+ local ss = (tenths // 10) % 60
+ local t = tenths % 10
+ return string.format("%02d:%02d:%02d.%01d", hh, mm, ss, t)
+end
+
 function displayContainers()
  local containers = component.proxy(component.findComponent("STORAGE"))
  if not containers then error("Containers was nil") end
@@ -121,10 +130,9 @@ gpu:setSize(55, 25)
 
 while true do
  clearScreen(gpu)
- gpu:flush()
- event.pull(1)
  displayFactories()
  displayContainers()
+ gpu:setText(0, 24, "Time: " .. convertToTime(computer.millis()))
  gpu:flush()
- event.pull(4)
+ event.pull(5)
 end
