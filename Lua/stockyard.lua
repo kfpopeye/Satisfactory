@@ -3,7 +3,7 @@ function catalogContainers()
  if not containers then error("Containers was nil") end
  for _, cntr in pairs(containers) do
   local invs = cntr:getInventories()[1]
-  local name = "Unnamed"
+  local name = "Unused"
 
   if(invs) then -- fluid buffers do not have an inventory
    local t = nil
@@ -42,7 +42,7 @@ end
 
 function printContainer(col, row, percentage, name)
  gpu:setForeground(1,1,1,1)
- if not (name == "Unnamed") then
+ if not (name == "Unused") then
   if (percentage < 50) then
    gpu:setForeground(1,0,0,1)
   elseif (percentage < 75) then
@@ -83,7 +83,7 @@ function updateOutput()
     if(t) then
      count = count + stack.count
      max = t.max * invs.Size
-     if (name == "Unnamed") then
+     if (name == "Unused") then
       name = t.name
       containerHashAndName[cntr.hash] = name
      end
@@ -93,7 +93,7 @@ function updateOutput()
   else
    count = cntr.fluidContent
    max = cntr.maxFluidContent
-   if (name == "Unnamed") then
+   if (name == "Unused") then
     name = cntr:getFluidType().name
     containerHashAndName[cntr.hash] = name
    end
@@ -116,7 +116,7 @@ local gpus = computer.getPCIDevices(findClass("GPUT1"))
 gpu = gpus[1]
 if not gpu then error("No GPU T1 found!") end
 
-local screen = component.proxy("BDC2EB1146532A25708ECC89560A4D4E")
+local screen = component.proxy("5031F25C4A57F62291D2C1872B2CCA90")
 if not screen then error("No screen") end
 
 gpu:bindScreen(screen)
