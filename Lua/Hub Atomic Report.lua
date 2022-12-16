@@ -27,54 +27,85 @@ function convertToTime(ms)
  return string.format("%02d:%02d:%02d.%01d", hh, mm, ss, t)
 end
 
-function updatePort42(data)
+function updateData(data, ctable, ftable)
  local d1, d2, d3, d4, d5, d6, d7 = table.unpack(data)
-  if d1 == "ping" then
-   print ("Received ping on port: " .. port)
-   netp42:send(sender, port, "pong")
-  elseif d1 == "container" then
-   containersPort42[d2] = d3
-   print(table.unpack(data))
+  if d1 == "container" then
+   ctable[d2] = d3
   elseif d1 == "factory" then
-   factoriesPort42[d2] = d3
-   print(table.unpack(data))
+   ftable[d2] = d3
   end
 end
 
 function updateScreen()
  clearScreen(gpu)
  local row = 0
+ local col = 0
 
+-- ********************************************** ATOMIC BAY
  gpu:setBackground(0, 1.0, 0.5, 0.5)
  gpu:setForeground(0, 0, 0, 1)
- gpu:setText(0, row, string.format("%-59s", "Atomic Bay Monitoring")) --55 chars (padded with spaces after)
+ gpu:setText(col, row, string.format("%-59s", "Atomic Bay Monitoring")) --55 chars (padded with spaces after)
  row = row + 1
 
  gpu:setBackground(0, 0.5, 1.0, 0.5)
  gpu:setForeground(0, 0, 0, 1)
- gpu:setText(0, row, string.format("%-54s", "Factories Output Status")) --55 chars (padded with spaces after)
+ gpu:setText(col, row, string.format("%-54s", "Factories Output Status")) --55 chars (padded with spaces after)
  gpu:setBackground(0,0,0,0)
  gpu:setForeground(1,1,1,1)
  row = row + 1
+ if (tableLength(factoriesPort42) == 0) then gpu:setText(col + 1, row, "No factories") end
  for n, m in pairs(factoriesPort42) do
-  gpu:setText(1, row, n .. m)
+  gpu:setText(col + 1, row, n .. m)
   row = row + 1
  end
 
  row = row + 1
  gpu:setBackground(0, 0.5, 1.0, 0.5)
  gpu:setForeground(0, 0, 0, 1)
- gpu:setText(0, row, string.format("%-54s", "Container Inventory")) --55 chars (padded with spaces after)
+ gpu:setText(col, row, string.format("%-54s", "Container Inventory")) --55 chars (padded with spaces after)
  gpu:setBackground(0,0,0,0)
  gpu:setForeground(1,1,1,1)
  row = row + 1
+ if (tableLength(containersPort42) == 0) then gpu:setText(col + 1, row, "No containers") end
  for n, m in pairs(containersPort42) do
-  gpu:setText(1, row, string.format("%-20s", n) .. string.format("%3s", m) .. "%")
+  gpu:setText(col + 1, row, string.format("%-20s", n) .. string.format("%3s", m) .. "%")
+  row = row + 1
+ end
+
+-- ********************************************** ATOMIC CAVE
+ local row = 0
+ local col = 60
+ gpu:setBackground(0, 1.0, 0.5, 0.5)
+ gpu:setForeground(0, 0, 0, 1)
+ gpu:setText(col, row, string.format("%-59s", "Atomic Cave Monitoring")) --55 chars (padded with spaces after)
+ row = row + 1
+
+ gpu:setBackground(0, 0.5, 1.0, 0.5)
+ gpu:setForeground(0, 0, 0, 1)
+ gpu:setText(col, row, string.format("%-54s", "Factories Output Status")) --55 chars (padded with spaces after)
+ gpu:setBackground(0,0,0,0)
+ gpu:setForeground(1,1,1,1)
+ row = row + 1
+ if (tableLength(factoriesPort43) == 0) then gpu:setText(col + 1, row, "No factories") end
+ for n, m in pairs(factoriesPort43) do
+  gpu:setText(col + 1, row, n .. m)
+  row = row + 1
+ end
+
+ row = row + 1
+ gpu:setBackground(0, 0.5, 1.0, 0.5)
+ gpu:setForeground(0, 0, 0, 1)
+ gpu:setText(col, row, string.format("%-54s", "Container Inventory")) --55 chars (padded with spaces after)
+ gpu:setBackground(0,0,0,0)
+ gpu:setForeground(1,1,1,1)
+ row = row + 1
+ if (tableLength(containersPort43) == 0) then gpu:setText(col + 1, row, "No containers") end
+ for n, m in pairs(containersPort43) do
+  gpu:setText(col + 1, row, string.format("%-20s", n) .. string.format("%3s", m) .. "%")
   row = row + 1
  end
  
- row = row + 1
- gpu:setText(0, row, "Time: " .. convertToTime(computer.millis()))
+ gpu:setText(0, 33, "Runtime: " .. convertToTime(computer.millis()))
  gpu:flush()
 end
 
@@ -87,21 +118,24 @@ local screen = component.proxy("AB23A01048A8DA61D40B91AE992645F3")
 if not screen then error("No screen") end
 
 gpu:bindScreen(screen)
-gpu:setSize(120, 30)
+gpu:setSize(120, 34)
 clearScreen(gpu)
 
-local netp42 = computer.getPCIDevices(findClass("NetworkCard"))[1]
-if not netp42 then error("No network card") end
+local net = computer.getPCIDevices(findClass("NetworkCard"))[1]
+if not net then error("No network card") end
 
 event.ignoreAll()
 event.clear()
-event.listen(netp42)
-netp42:open(42)
+event.listen(net)
+net:open(42)
+net:open(43)
 
-print("Opened port")
+print("Opened ports")
 
 containersPort42 = {}
 factoriesPort42 = {}
+containersPort43 = {}
+factoriesPort43 = {}
 
 while true do
  local data = {event.pull()}
@@ -110,7 +144,12 @@ while true do
  end) (table.unpack(data))
 
  if e == "NetworkMessage" then
-  if (port == 42) then updatePort42(data) end
+  print("Updating data from port: " .. port)
+  if (port == 42) then
+   updateData(data, containersPort42, factoriesPort42)
+  elseif (port == 43) then
+   updateData(data, containersPort43, factoriesPort43)
+  end
   updateScreen()
  end
 end
