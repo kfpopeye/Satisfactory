@@ -106,7 +106,7 @@ function displayFactories()
     output = output .. "empty"
    end --if   
    i = i + 1
-   if (i < invs.Size) then output = output .. " | " end
+   if (i < invsSize) then output = output .. " | " end
   end --while
   
   local name = fctry.nick:sub(11) --removes "ATOMICBAY "
