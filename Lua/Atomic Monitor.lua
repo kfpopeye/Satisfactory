@@ -35,11 +35,11 @@ function displayContainers()
 
  gpu:setBackground(0, 0.5, 1.0, 0.5)
  gpu:setForeground(0, 0, 0, 1)
- gpu:setText(0, 11, string.format("%-54s", "Container Inventory")) --55 chars (padded with spaces after)
+ gpu:setText(0, 12, string.format("%-54s", "Container Inventory")) --55 chars (padded with spaces after)
  gpu:setBackground(0,0,0,0)
  gpu:setForeground(1,1,1,1)
 
- local row = 12
+ local row = 13
  for _, cntr in pairs(containers) do
   --print ("Type: " .. cntr:getType().displayName)
   local invs = cntr:getInventories()[1]
