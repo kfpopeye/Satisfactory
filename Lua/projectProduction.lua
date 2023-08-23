@@ -1,3 +1,9 @@
+function tableLength(T)
+  local count = 0
+  for _ in pairs(T) do count = count + 1 end
+  return count
+end
+
 function clearScreen(g)
  local w,h = g:getSize()
  g:setBackground(0, 0, 0, 0)
@@ -26,15 +32,17 @@ function displayManufacturer(m)
 
  gpu:setText(0, 1, "Device: " .. m:getType().displayName)
  gpu:setText(0, 2, "Recipe: " .. m:getRecipe().Name)
+ local num = tableLength(m:getRecipe():getIngredients())
+ gpu:setText(0, 3, "        Requires " .. num .. " ingredients.")
  local prod = makePercentage(m.Productivity)
  if prod < 100 then gpu:setForeground(1,1,0,1) end
- gpu:setText(0, 3, "Productivity: " .. prod .. "%")
+ gpu:setText(0, 4, "Productivity: " .. prod .. "%")
  gpu:setForeground(1,1,1,1)
 
  local invs = m:getInputInv()
  local i = 0
- local row = 5
- gpu:setText(0, 4, "Input Inventories ------------------------------------------------------------------")
+ local row = 7
+ gpu:setText(0, 6, "Input Inventories ------------------------------------------------------------------")
  while (i < invs.Size) do
   local t = nil
   local stack = invs:getStack(i)
@@ -44,6 +52,9 @@ function displayManufacturer(m)
    local m = t.max
    local n = t.name
    gpu:setText(0, row, n .. ": " .. c .. "/" .. m)
+   row = row + 1
+  else
+   gpu:setText(0, row, "Empty")
    row = row + 1
   end
   i = i + 1
@@ -78,7 +89,7 @@ local gpus = computer.getPCIDevices(findClass("GPUT1"))
 gpu = gpus[1]
 if not gpu then error("No GPU T1 found!") end
 
-local screen = component.proxy("61BF6C8449CD3E52CF4615819277F011")
+local screen = component.proxy("1EBEEDA642B4A7CE019B6B9413F0C20F")
 if not screen then error("No screen") end
 
 gpu:bindScreen(screen)
