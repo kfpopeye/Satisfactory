@@ -32,7 +32,11 @@ function updateData(data, ctable, ftable)
   if d1 == "container" then
    ctable[d2] = d3
   elseif d1 == "factory" then
-   ftable[d2] = d3
+   local fdata = {}
+   fdata["outputs"] = d3
+   fdata["inputs"] = d4
+   if(d5) then fdata["productivity"] = d5 else fdata["productivity"] = "--" end   
+   ftable[d2] = fdata
   end
 end
 
@@ -49,13 +53,18 @@ function updateScreen()
 
  gpu:setBackground(0, 0.5, 1.0, 0.5)
  gpu:setForeground(0, 0, 0, 1)
- gpu:setText(col, row, string.format("%-54s", "Factories Output Status")) --55 chars (padded with spaces after)
+ gpu:setText(col, row, string.format("%-54s", "Factories Output\\Input Status")) --55 chars (padded with spaces after)
  gpu:setBackground(0,0,0,0)
  gpu:setForeground(1,1,1,1)
  row = row + 1
  if (tableLength(factoriesPort42) == 0) then gpu:setText(col + 1, row, "No factories") end
  for n, m in pairs(factoriesPort42) do
-  gpu:setText(col + 1, row, n .. m)
+  local prod = "(" .. m["productivity"] .. "%) "
+  gpu:setText(col + 1, row, n .. prod .. m["outputs"])
+  row = row + 1
+  local indent = " "
+  while (indent:len() < (n:len() + prod:len())) do indent = indent .. " " end
+  gpu:setText(col + 1, row, indent .. m["inputs"])
   row = row + 1
  end
 
@@ -82,14 +91,18 @@ function updateScreen()
 
  gpu:setBackground(0, 0.5, 1.0, 0.5)
  gpu:setForeground(0, 0, 0, 1)
- gpu:setText(col, row, string.format("%-54s", "Factories Output Status")) --55 chars (padded with spaces after)
+ gpu:setText(col, row, string.format("%-54s", "Factories Output\\Input Status")) --55 chars (padded with spaces after)
  gpu:setBackground(0,0,0,0)
  gpu:setForeground(1,1,1,1)
  row = row + 1
  if (tableLength(factoriesPort43) == 0) then gpu:setText(col + 1, row, "No factories") end
  for n, m in pairs(factoriesPort43) do
-  gpu:setText(col + 1, row, n .. m)
+  local prod = "(" .. m["productivity"] .. "%) "
+  gpu:setText(col + 1, row, n .. prod .. m["outputs"])
   row = row + 1
+  local indent = " "
+  while (indent:len() < (n:len()+prod:len())) do indent = indent .. " " end
+  gpu:setText(col + 1, row, indent .. m["inputs"])  row = row + 1
  end
 
  row = row + 1
