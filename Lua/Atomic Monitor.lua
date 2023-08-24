@@ -1,3 +1,24 @@
+-- IF the string is more than 1 word (contains spaces) and greater than 5 characters
+-- this will remove all lowercase letters, remove all dashes and convert spaces to periods
+function createAbbrev(s)
+ if (string.find(s, "%s")) then
+  if (s:len() > 5) then
+   return string.gsub(string.gsub(string.gsub(s, "%l", ""), "%s", "."), "%-", "")
+  end
+ end
+ return s
+end
+
+function round(n)
+ return n % 1 >= 0.5 and math.ceil(n) or math.floor(n)
+end
+
+function makePercentage(x)
+ local num = x * 100
+ num = round (num)
+ return num
+end
+
 function clearScreen(g)
  local w,h = g:getSize()
  g:setBackground(0, 0, 0, 0)
@@ -30,16 +51,17 @@ end
 function displayContainers()
  local containers = component.proxy(component.findComponent("STORAGE"))
  if not containers then error("Containers was nil") end
- print("Number of containers: " .. tableLength(containers))
+ --print("Number of containers: " .. tableLength(containers))
  if (tableLength(containers) == 0) then return end
 
  gpu:setBackground(0, 0.5, 1.0, 0.5)
  gpu:setForeground(0, 0, 0, 1)
- gpu:setText(0, 12, string.format("%-54s", "Container Inventory")) --55 chars (padded with spaces after)
+ gpu:setText(0, 21, string.format("%-64s", "Container Inventory")) --65 chars (padded with spaces after)
  gpu:setBackground(0,0,0,0)
  gpu:setForeground(1,1,1,1)
 
- local row = 13
+ local row = 22
+ local col = 1
  for _, cntr in pairs(containers) do
   --print ("Type: " .. cntr:getType().displayName)
   local invs = cntr:getInventories()[1]
@@ -59,8 +81,13 @@ function displayContainers()
    i = i + 1
   end --while
 
-  local percentage = math.floor(count / max * 100)
-  gpu:setText(1, row, string.format("%-20s", name) .. string.format("%3s", percentage) .. "%")
+  if (row > 25 and col == 1) then
+   col = 30
+   row = 22
+  end
+
+  local percentage = makePercentage(count / max)
+  gpu:setText(col, row, string.format("%-20s", name) .. string.format("%3s", percentage) .. "%")
   net:broadcast(port, "container", name, percentage)
   row = row + 1
  end --for
@@ -69,49 +96,111 @@ end
 function displayFactories()
  gpu:setBackground(0, 0.5, 1.0, 0.5)
  gpu:setForeground(0, 0, 0, 1)
- gpu:setText(0, 0, string.format("%-54s", "Factories Output Status")) --55 chars (padded with spaces after)
+ gpu:setText(0, 0, string.format("%-64s", "Factories Output\\Input Status")) --65 chars (padded with spaces after)
  gpu:setBackground(0,0,0,0)
  gpu:setForeground(1,1,1,1)
 
  local factories = component.proxy(component.findComponent("ATOMICBAY"))
  if not factories then error("Factories was nil") end
- print("Number of factories: " .. tableLength(factories))
+ --print("Number of factories: " .. tableLength(factories))
 
  local row = 0
  local invsSize = 0
  for _, fctry in pairs(factories) do
-  local output = " -> "
+  local data_output = " OUT> "
+  local data_input = " IN> "
   row = row + 1
   local invs
+
   if (fctry:getType().Name == "Build_GeneratorNuclear_C") then
-   invs = fctry:getInventories()[1]
-   invsSize = invs.Size
+
+   local n = fctry:getInventories()[1] -- 1 output inventory (waste)
+   data_output = data_output .. "Nuclear Waste: " .. n.itemCount .. " "
+   n = fctry:getInventories()[2] -- 2 fuel inventory (water)
+   data_input = data_input .. "Water: " .. makePercentage(n.itemCount/50000) .. "% "
+   n = fctry:getInventories()[3] -- 3 inventory potential (rods)
+   data_input = data_input .. "Rods :" .. n.itemCount
+  
+   local name = fctry.nick:sub(11) --removes "ATOMICBAY "
+   gpu:setText(1, row, (name .. " (" .. makePercentage(fctry.productivity) .. "%)" .. data_output))
+   row = row + 1
+   local indent = " "
+   while (indent:len() < (name:len() + tostring(fctry.productivity):len() + 4)) do indent = indent .. " " end
+   gpu:setText(1, row, indent .. data_input)
+   net:broadcast(port, "factory", name, data_output, data_input)
+
   else
+
+   local rec = fctry:getRecipe()
+   --print(fctry:getType().Name .. " Nick:" .. fctry.nick .. " Recipe:" .. rec.name  .. " Prod:" .. makePercentage(fctry.productivity) .. "%")
    invs = fctry:getOutputInv()
    invsSize = invs.Size - 1 -- Satisfactory reports back incorrect number HACK
-  end
-  --print(fctry:getType().Name .. " " .. fctry.nick .. " " .. invs.Size)
-  local i = 0
 
-  while (i < invsSize) do
-   local t = nil
-   local stack = invs:getStack(i)
-   if (stack.item) then t = stack.item.type end
-   if (t) then
-    local c = stack.count
-    local m = t.max
-    local n = t.name
-    output = output .. n .. ": " .. c .. "/" .. m
-   else
-    output = output .. "empty"
-   end --if   
-   i = i + 1
-   if (i < invsSize) then output = output .. " | " end
-  end --while
-  
-  local name = fctry.nick:sub(11) --removes "ATOMICBAY "
-  gpu:setText(1, row, (name .. output))
-  net:broadcast(port, "factory", name, output)
+   -- summarizes output products
+   local rec_prod = rec:getProducts()
+   --print("    Outputs: " .. invsSize)
+   --print("        Number of products: " .. tableLength(rec_prod))
+   local prodTable = {}
+   for _, prodType in pairs(rec_prod) do
+    local n = createAbbrev(prodType.Type.Name)
+    prodTable[n] = "0%"
+   end
+
+   local i = 0
+   while (i < invsSize) do
+    local t = nil
+    local stack = invs:getStack(i)
+    if (stack.item) then t = stack.item.type end
+    if (t) then
+     local c = stack.count
+     local m = t.max
+     local n = createAbbrev(t.name)
+     prodTable[n] = makePercentage(c/m) .. "%"
+    end --if   
+    i = i + 1
+   end --while
+
+   for name, amnt in pairs(prodTable) do data_output = data_output .. name .. ":" .. amnt .. " " end
+   --print("        " .. data_output)
+
+   -- summarizes input ingredients
+   invs = fctry:getInputInv()
+   invsSize = invs.Size
+   --print("    Number of inputs: " .. invsSize)
+   local rec_ingred = rec:getIngredients()
+   --print("    Number of ingrediants: " .. tableLength(rec_ingred))
+   local ingredTable = {}
+   for _, ingredType in pairs(rec_ingred) do
+    local n = createAbbrev(ingredType.Type.Name)
+    ingredTable[n] = "0%"
+   end
+   i = 0
+   while (i < invsSize) do
+    local t = nil
+    local stack = invs:getStack(i)
+    if (stack.item) then t = stack.item.type end
+    if (t) then
+     local c = stack.count
+     local m = t.max
+     local n = createAbbrev(t.name)
+     ingredTable[n] = makePercentage(c/m) .. "%"
+    end --if   
+    i = i + 1
+   end --while
+
+   for name, amnt in pairs(ingredTable) do data_input = data_input .. name .. ":" .. amnt .. " " end
+   --print("        " .. data_input)
+
+   -- outputs factory summaries to screen and network
+   local name = fctry.nick:sub(11) --removes "ATOMICBAY "
+   local productivity = makePercentage(fctry.productivity)
+   gpu:setText(1, row, (name .. " (" .. productivity .. "%)" .. data_output))
+   row = row + 1
+   local indent = " "
+   while (indent:len() < (name:len() + tostring(productivity):len() + 4)) do indent = indent .. " " end
+   gpu:setText(1, row, (indent .. data_input))
+   net:broadcast(port, "factory", name, data_output, data_input, productivity)
+  end --if nuclear plant
  end --for
 end
 
@@ -120,7 +209,7 @@ local gpus = computer.getPCIDevices(findClass("GPUT1"))
 gpu = gpus[1]
 if not gpu then error("No GPU T1 found!") end
 
-local screen = component.proxy("3A9AEF754BD02F4E2491C6B1949870CE")
+local screen = component.proxy("CCA9872542AAAE8F6C76E3AA73AC4049")
 if not screen then error("No screen") end
 
 net = computer.getPCIDevices(findClass("NetworkCard"))[1]
@@ -129,13 +218,13 @@ if not net then error("No network card") end
 port = 42
 
 gpu:bindScreen(screen)
-gpu:setSize(55, 25)
+gpu:setSize(65, 27)
 
 while true do
  clearScreen(gpu)
  displayFactories()
  displayContainers()
- gpu:setText(0, 24, "Time: " .. convertToTime(computer.millis()))
+ gpu:setText(0, 26, "Run time: " .. convertToTime(computer.millis()))
  gpu:flush()
- event.pull(5)
+ event.pull(.05) --5
 end
