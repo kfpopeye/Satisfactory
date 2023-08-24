@@ -51,7 +51,7 @@ end
 function displayContainers()
  local containers = component.proxy(component.findComponent("STORAGE"))
  if not containers then error("Containers was nil") end
- --print("Number of containers: " .. tableLength(containers))
+ print("Number of containers: " .. tableLength(containers))
  if (tableLength(containers) == 0) then return end
 
  gpu:setBackground(0, 0.5, 1.0, 0.5)
@@ -102,7 +102,7 @@ function displayFactories()
 
  local factories = component.proxy(component.findComponent("ATOMICBAY"))
  if not factories then error("Factories was nil") end
- --print("Number of factories: " .. tableLength(factories))
+ print("Number of factories: " .. tableLength(factories))
 
  local row = 0
  local invsSize = 0
@@ -122,12 +122,13 @@ function displayFactories()
    data_input = data_input .. "Rods :" .. n.itemCount
   
    local name = fctry.nick:sub(11) --removes "ATOMICBAY "
-   gpu:setText(1, row, (name .. " (" .. makePercentage(fctry.productivity) .. "%)" .. data_output))
+   local prod = " (" .. makePercentage(fctry.productivity) .. "%)"
+   gpu:setText(1, row, (name .. prod .. data_output))
    row = row + 1
    local indent = " "
-   while (indent:len() < (name:len() + tostring(fctry.productivity):len() + 4)) do indent = indent .. " " end
+   while (indent:len() < (name:len() + prod:len() + 4)) do indent = indent .. " " end
    gpu:setText(1, row, indent .. data_input)
-   net:broadcast(port, "factory", name, data_output, data_input)
+   net:broadcast(port, "factory", name, data_output, data_input, makePercentage(fctry.productivity))
 
   else
 
@@ -226,5 +227,5 @@ while true do
  displayContainers()
  gpu:setText(0, 26, "Run time: " .. convertToTime(computer.millis()))
  gpu:flush()
- event.pull(.05) --5
+ event.pull(5)
 end
