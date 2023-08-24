@@ -100,7 +100,7 @@ function displayFactories()
  gpu:setBackground(0,0,0,0)
  gpu:setForeground(1,1,1,1)
 
- local factories = component.proxy(component.findComponent("ATOMICBAY"))
+ local factories = component.proxy(component.findComponent(siteNick))
  if not factories then error("Factories was nil") end
  print("Number of factories: " .. tableLength(factories))
 
@@ -121,14 +121,14 @@ function displayFactories()
    n = fctry:getInventories()[3] -- 3 inventory potential (rods)
    data_input = data_input .. "Rods :" .. n.itemCount
   
-   local name = fctry.nick:sub(11) --removes "ATOMICBAY "
-   local prod = " (" .. makePercentage(fctry.productivity) .. "%)"
-   gpu:setText(1, row, (name .. prod .. data_output))
+   local name = fctry.nick:sub(siteNick:len() + 2) --removes "ATOMICBAY "
+   local prod = makePercentage(fctry.productivity)
+   gpu:setText(1, row, (name .. " (" .. prod .. "%)" .. data_output))
    row = row + 1
    local indent = " "
-   while (indent:len() < (name:len() + prod:len() + 4)) do indent = indent .. " " end
+   while (indent:len() < (name:len() + tostring(prod):len() + 4)) do indent = indent .. " " end
    gpu:setText(1, row, indent .. data_input)
-   net:broadcast(port, "factory", name, data_output, data_input, makePercentage(fctry.productivity))
+   net:broadcast(port, "factory", name, data_output, data_input, prod)
 
   else
 
@@ -193,7 +193,7 @@ function displayFactories()
    --print("        " .. data_input)
 
    -- outputs factory summaries to screen and network
-   local name = fctry.nick:sub(11) --removes "ATOMICBAY "
+   local name = fctry.nick:sub(siteNick:len() + 2) --removes "ATOMICBAY "
    local productivity = makePercentage(fctry.productivity)
    gpu:setText(1, row, (name .. " (" .. productivity .. "%)" .. data_output))
    row = row + 1
@@ -210,13 +210,16 @@ local gpus = computer.getPCIDevices(findClass("GPUT1"))
 gpu = gpus[1]
 if not gpu then error("No GPU T1 found!") end
 
-local screen = component.proxy("CCA9872542AAAE8F6C76E3AA73AC4049")
+local screen = component.proxy("D7EBEEC6426C054B81264CA836E56FCC")
 if not screen then error("No screen") end
 
 net = computer.getPCIDevices(findClass("NetworkCard"))[1]
 if not net then error("No network card") end
 
-port = 42
+--ATOMICBAY 42
+-- ATOMICAVE 43
+port = 43
+siteNick = "ATOMICCAVE"
 
 gpu:bindScreen(screen)
 gpu:setSize(65, 27)
