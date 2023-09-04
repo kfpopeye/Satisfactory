@@ -128,6 +128,7 @@ local iconIndex = 5
 
 containerHashAndName = {}
 catalogContainers()
+local w,h = gpu:getSize()
 
 while true do
  if(iconIndex > 4) then 
@@ -136,7 +137,7 @@ while true do
  end 
  gpu:setBackground(0, 0.5, 1.0, 0.5)
  gpu:setForeground(0, 0, 0, 1)
- gpu:setText(54, 0, icon[iconIndex])
+ gpu:setText(w - 1, 0, icon[iconIndex])
  gpu:flush()
  iconIndex = iconIndex + 1
  event.pull(1)
