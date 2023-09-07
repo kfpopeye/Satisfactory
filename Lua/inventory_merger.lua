@@ -1,9 +1,9 @@
 containerId = "08BC875F4652A329EBC31793BFECB856"
-groupName = "tickle" -- if all the codeable mergers are grouped, enter the group name inside the quotes
+groupName = "tickle" -- if all the codeable mergers are grouped, enter the group name inside the quotes otherwise all codeable mergers will be used.
 itemMaxLimit = 0 -- setting this to greater than 0 will fill container with this many of each item, instead of filling partial stacks
 
 -- Important information
--- merger names must follow the format "groupName part direction". Where direction = middle, left or right (the direction to the container.
+-- merger names must follow the format "groupName part direction direction". Where direction = middle, left or right (indicates optional passthru ports)
 
 --clears the screen tab
 function clearTabScreen()
