@@ -1,9 +1,14 @@
-containerId = "08BC875F4652A329EBC31793BFECB856"
-groupName = "tickle" -- if all the codeable mergers are grouped, enter the group name inside the quotes otherwise all codeable mergers will be used.
+containerId = "113AA7C14E6BC53EB3A0E9B061E498A5"
+groupName = "tickle" -- if all the codeable mergers are grouped, enter the group name inside the quotes otherwise
+                     -- all codeable mergers will be used.
 itemMaxLimit = 0 -- setting this to greater than 0 will fill container with this many of each item, instead of filling partial stacks
 
+debug = true -- supresses debug comments
+
 -- Important information
--- merger names must follow the format "groupName part direction direction". Where direction = middle, left or right (indicates optional passthru ports)
+-- 1. Merger names must follow the format "groupName part direction direction"
+--    where direction indicates 2 optional passthru ports = middle (or centre), left or right
+-- 2. Tabbed screen and control panel are option but control panel must have 2 text screens, a button and a lever.
 
 --clears the screen tab
 function clearTabScreen()
@@ -13,6 +18,14 @@ function clearTabScreen()
  gpu:setBackground(0,0,0,0)
  gpu:fill(0,0,w,h,".")
  gpu:flush()
+end
+
+function clearScreen(g)
+ local w,h = g:getSize()
+ g:setForeground(1,1,1,1)
+ g:setBackground(0,0,0,0)
+ g:fill(0,0,w,h,".")
+ g:flush()
 end
 
 function convertToTime(ms)
@@ -50,7 +63,7 @@ function updateInfo()
  gpu:setBackground(0,0,0,0)
  gpu:setForeground(1,1,1,1)
  gpu:setText(col, row, "Items transitting: " .. itemsInTransit)
- print("Items transitting: " .. itemsInTransit)
+ if (debug) then print("Items transitting: " .. itemsInTransit) end
  if itemsInTransit == 0 and not needsRefill then 
   gpu:setForeground(0,1,0,1)
   gpu:setText(col + 25, row, "**** COMPLETE ****")
@@ -67,7 +80,7 @@ function updateInfo()
  row = row + 1
  local s = "Time out in: " .. convertToTime(refillTimeOut - (computer.millis() - lastTransferTime))
  gpu:setText(col, row, s)
- print(s)
+ if (debug) then print(s) end
  row = row + 2
  
  gpu:setBackground(1,1,1,1)
@@ -81,6 +94,7 @@ function updateInfo()
  gpu:setBackground(0,0,0,0)
  gpu:setForeground(1,1,1,1)
  local rowStart = row
+ local pScreenTxt = "Transferring parts:\n"
  for _, infoTable in pairs(slotsToRefill) do
   local n = string.sub((infoTable["name"] .. "          "), 1, 10)
   if(infoTable["mrgrId"]) then
@@ -89,14 +103,16 @@ function updateInfo()
    gpu:setForeground(1,1,0,1) --yellow
   end
   gpu:setText(col, row, n .. " (" .. infoTable["count"] .. "\\" .. infoTable["max"] .. ")") --"keeps colour formatting
+  pScreenTxt = pScreenTxt .. n .. "\n"
   row = row + 1
   if (row == rowStart + 12) then
    row = rowStart
    col = col + 30
   end
  end
+ progScreen.Text = pScreenTxt
  gpu:flush()
- print()
+ if (debug) then print() end
 end
 
 -- passing a string will add it to the buffer, passing nil will display buffer to screen
@@ -190,6 +206,8 @@ function isPassThrough(mrgr, dir)
   return true
  elseif((dir == direction.middle) and s:find("middle")) then
   return true
+ elseif((dir == direction.middle) and s:find("centre")) then
+  return true
  elseif((dir == direction.right) and s:find("right")) then
   return true
  end
@@ -214,7 +232,7 @@ function findMerger(intName)
  local returnMerger = nil
  local returnInput = -1
  local mergers = getMergers()
- if count == 0 then error("No Codeable Mergers found!") else print("Findmerger() found " .. mergerCount .. " mergers.") end
+ if count == 0 then error("No Codeable Mergers found!") end
 
  for _, merger in pairs(mergers) do
   local x = 0
@@ -236,9 +254,9 @@ function findMerger(intName)
    end
    x = x + 1
   end
-  print(dbgMsg)
+  if (debug) then print(dbgMsg) end
  end
- print()
+ if (debug) then print() end
  return returnMerger, returnInput
 end
 
@@ -246,13 +264,21 @@ function checkEvents()
  e, sender = event.pull(0)
  if (e == "ItemTransfer") then
   itemsInTransit = itemsInTransit - 1
+ elseif (e == "Trigger" and sender == button) then
+  infoScreen.Text = "Already refilling."
+  computer.beep()
+ elseif (e == "ChangeState" and sender == lever) then
+  lever.State = not lever.State
+  event.pull(0)
+  infoScreen.Text = "Cannot change pass-thru\nmode while transferring parts."
+  computer.beep()
  end
 end
 
 function processPassthruInputs()
  local dbgMsg = nil
  local mergers = getMergers()
- if count == 0 then error("No Codeable Mergers found!") else print("processPassthruInputs() found " .. mergerCount .. " mergers.") end
+ if count == 0 then error("No Codeable Mergers found!") end
 
  for _, merger in pairs(mergers) do
   local x = 0
@@ -272,7 +298,7 @@ function processPassthruInputs()
   end --endwhile
   if dbgMsg then print(dbgMsg) end
  end --endfor
- print()
+ if (debug) then print() end
 end
 
 function refillContainer()
@@ -296,8 +322,10 @@ function refillContainer()
     else
      dbgMsg = "No merger has " .. slotsToRefill[intName]["name"]
     end
-    print(dbgMsg)
-    print()
+    if (debug) then 
+     print(dbgMsg)
+     print()
+    end
    end
    processPassthruInputs()
    updateInfo()
@@ -308,6 +336,36 @@ function refillContainer()
    end
   end --endfor
  end -- endwhile
+end
+
+function waitForStart()
+-- reset globals
+ mergerCount = 0
+ itemsInTransit = 0
+ lastTransferTime = computer.millis()
+ timedOut = false
+ needsRefill = true
+
+ print("Waiting for start......")
+ local waiting = true
+ button:setColor(1,1,0)
+ while (waiting) do
+  e, sender = event.pull(0)
+  if (e == "Trigger" and sender == button) then
+   waiting = false
+   button:setColor(0,1,0)
+   computer.beep()
+  elseif (e == "ChangeState" and sender == lever) then
+   if (lever.state) then
+    needsRefill = false
+    itemsInTransit = 100
+   else
+    needsRefill = true
+    itemsInTransit = 0
+   end
+   computer.beep()
+  end
+ end
 end
 
 -- ***************** constants ********************
@@ -333,32 +391,78 @@ if screen and gpu then
  hasScreen = true
  clearTabScreen()
 end
-
+--------------------------------
 container = component.proxy(containerId)
 if not container then error("No Container found!") end
 for _, connector in pairs(container:getFactoryConnectors()) do event.listen(connector) end
+--------------------------------
+hasPanel = false
+panel = component.proxy("75161C31488584453DCCA58A07B3276E")
+if (panel) then
+ hasPanel = true
+ print("Found control panel")
+ for _, module in pairs(panel:getModules()) do
+  if (module:getType().Name == "ModuleSwitch_C") then lever = module print("Found button") end
+  if (module:getType().Name == "ModuleButton") then button = module print("Found lever") end
+  if (module:getType().Name == "ModuleTextDisplay_C" and infoScreen) then
+   print("Found text screen 2")
+   progScreen = module
+   progScreen.Size = 25
+   progScreen.Text = "Progress screen"
+  end
+  if (module:getType().Name == "ModuleTextDisplay_C" and not infoScreen) then
+   print("Found text screen 1")
+   infoScreen = module
+   infoScreen.size = 25
+   infoScreen.text = "Information screen"
+  end
+ end
+ lever.State = false
+ event.listen(lever)
+ event.listen(button)
+else
+ print("No control panel found")
+end
 event.clear()
+if (hasPanel) then infoScreen.text = "Waiting to start..." end
+
+-- ***************** main ********************
+::startMain::
+if (hasPanel) then waitForStart() end
+
+--uncomment these 2 lines below to make unit process passthrough ports only
+--needsRefill = false
+--itemsInTransit = 100
+
+--check if anything needs to be refilled
 slotsToRefill = createInventoryList()
 local count = tableLength(slotsToRefill)
 if count == 0 then
  needsRefill = false
  print("No slots were partially filled. Nothing to do.")
+ if (hasPanel) then infoScreen.text = "No slots were partially filled.\nNothing to do." end
  computer.beep()
 else
  needsRefill = true
+ if (hasPanel) then infoScreen.text = "Refilling in progress." end
  printInventoryToScreen()
 end
 
---uncomment these 2 lines below to make unit process passthrough only
---needsRefill = false
---itemsInTransit = 100
-
+--start refilling containers
 local status, err = pcall(refillContainer)
 if not status then
- computer.beep()
  print(err)
+ computer.beep()
+ if (hasPanel) then
+  button:setColor(1,0,0)
+  progScreen.Size = 50
+  progScreen.Text = "ERROR"
+  infoScreen.Text = "An error has occured.\nRefer to the console for more details."
+ end
 end
 
+if (hasPanel) then infoScreen.text = "Refill complete.\nWaiting for transitting items." end
+--continue passing parts through untill all parts have arrived or times out
 while itemsInTransit > 0 and not timedOut do
  processPassthruInputs()
  updateInfo()
@@ -372,3 +476,8 @@ end
 updateInfo()
 computer.beep()
 print ("Done")
+
+if (hasPanel) then
+ infoScreen.text = "Transitting complete.\nWaiting to start..."
+ goto startMain
+end
