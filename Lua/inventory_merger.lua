@@ -110,7 +110,10 @@ function updateInfo()
    col = col + 30
   end
  end
- progScreen.Text = pScreenTxt
+ if (hasPanel) then
+  progScreen.Text = pScreenTxt
+  if (lever.state) then progScreen.text = "Pass through mode" end
+ end
  gpu:flush()
  if (debug) then print() end
 end
@@ -268,7 +271,10 @@ function checkEvents()
   infoScreen.Text = "Already refilling."
   computer.beep()
  elseif (e == "ChangeState" and sender == lever) then
+  event.ignore(lever)
   lever.State = not lever.State
+  event.clear()
+  event.listen(lever)
   event.pull(0)
   infoScreen.Text = "Cannot change pass-thru\nmode while transferring parts."
   computer.beep()
