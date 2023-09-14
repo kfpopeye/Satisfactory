@@ -22,8 +22,7 @@ function printReports()
  local row = 0
 
  for _, v in pairs(vehicles) do  
-  print(v["scanner"] .. " : " .. v["percent"] .. "% full")
-  gpu:setText(0, row, v["scanner"])
+  gpu:setText(0, row, v["scanner"] .. "   Time since last: " .. convertToTime(computer.millis() - v["lastTrip"]))
   row = row + 1
    if (v["lastTripTime"] < 100) then
    gpu:setText(1, row, v["percent"] .. "% full. Trip time: N\\A")
@@ -71,14 +70,14 @@ function updateVehicle(v, scanner)
  vehicles[v.hash]["report"] = report
  vehicles[v.hash]["percent"] = stackCount / inv.size * 100
  vehicles[v.hash]["lastTripTime"] = computer.millis() - vehicles[v.hash]["lastTrip"]
- printReports()
  vehicles[v.hash]["lastTrip"] = computer.millis()
+ print(vehicles[v.hash]["scanner"] .. " : " .. vehicles[v.hash]["percent"] .. "% full")
 end
 
 function mainLoop()
  print("Looping")
  while(true) do
-  e, sender, veh = event.pull(0)
+  e, sender, veh = event.pull(15)
   if (e == "OnVehicleEnter") then
    if(veh.isSelfDriving) then updateVehicle(veh,sender) end
    sender:setColor(1, 0, 0, 1)
@@ -87,6 +86,7 @@ function mainLoop()
   elseif (e == "OnVehicleExit") then
    sender:setColor(1, 0, 0, 0) 
   end
+  printReports()
  end
 end
 
@@ -106,10 +106,10 @@ gpu:setSize(50, 20)
 clearScreen(gpu)
 
 ts1 = component.proxy("4AA24AF14328B63152360BA5A69AC8F8")
-if not ts1 then error("Truckstop 1 is missing") end
+if not ts1 then error("Scanner 1 is missing") end
 
 ts2 = component.proxy("106C4BF2436BAF5583FD04ABEA480F9B")
-if not ts2 then error("Truckstop 2 is missing") end
+if not ts2 then error("Scanner 2 is missing") end
 
 event.listen(ts1)
 event.listen(ts2)
