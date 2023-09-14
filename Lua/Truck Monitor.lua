@@ -19,15 +19,19 @@ function mainLoop()
     count = count + 1
    end
    if (sender == ts1) then
-    gpu:setText(0, 0, sender.nick .. " : " .. stackCount / inv.size * 100 .. "% full         ")
+    if(veh.isSelfDriving) then gpu:setText(0, 0, sender.nick .. " : " .. stackCount / inv.size * 100 .. "% full         ") end
     ts1:setColor(1, 0, 0, 1)
    end
    if (sender == ts2) then
-    gpu:setText(0, 1, sender.nick .. " : " .. stackCount / inv.size * 100 .. "% full         ")
+    if(veh.isSelfDriving) then gpu:setText(0, 1, sender.nick .. " : " .. stackCount / inv.size * 100 .. "% full         ") end
     ts2:setColor(1, 0, 0, 1)
    end
    gpu:flush()
-   print(sender.nick .. " : " .. stackCount / inv.size * 100 .. "% full")
+   if(veh.isSelfDriving) then
+    print(sender.nick .. " : " .. stackCount / inv.size * 100 .. "% full")
+   else
+    print ("Vehicle was not self driving.")
+   end
    computer.beep()
   elseif (e == "OnVehicleExit") then
    if (sender == ts1) then ts1:setColor(1, 0, 0, 0) end
