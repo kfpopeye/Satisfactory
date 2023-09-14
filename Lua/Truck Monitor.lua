@@ -6,39 +6,92 @@ function clearScreen(g)
  g:flush()
 end
 
+function convertToTime(ms)
+ if(not ms) then print ("convertToTime() received nil") end
+ if ms < 0 then ms = 0 end
+ local tenths = ms // 100
+ local hh = (tenths // (60 * 60 * 10)) % 24
+ local mm = (tenths // (60 * 10)) % 60
+ local ss = (tenths // 10) % 60
+ local t = tenths % 10
+ return string.format("%02d:%02d:%02d.%01d", hh, mm, ss, t)
+end
+
+function printReports()
+ clearScreen(gpu)
+ local row = 0
+
+ for _, v in pairs(vehicles) do  
+  print(v["scanner"] .. " : " .. v["percent"] .. "% full")
+  gpu:setText(0, row, v["scanner"])
+  row = row + 1
+   if (v["lastTripTime"] < 100) then
+   gpu:setText(1, row, v["percent"] .. "% full. Trip time: N\\A")
+  else
+   gpu:setText(1, row, v["percent"] .. "% full. Trip time: " .. convertToTime(v["lastTripTime"]))
+  end
+ 
+  for n, c in pairs(v["report"]) do
+   row = row + 1
+   gpu:setText(2, row, n .. ": " .. c)
+  end
+  row = row + 2
+ end
+ gpu:flush()
+end
+
+function updateVehicle(v, scanner)
+ if (vehicles[v.hash] == nil) then
+  local data = {}
+  data["lastTrip"] = computer.millis()
+  data["scanner"] = scanner.nick
+  vehicles[v.hash] = data
+ end
+
+ local inv = v:getStorageInv()
+ local count = 1
+ local stackCount = 0
+ local report = {}
+ while (count < inv.size) do
+  local t = nil
+  local s = inv:getStack(count)
+  if (s.item) then t = s.item.type end
+  if(t) then
+   stackCount = stackCount + 1
+   local c = s.count
+   local name = t.name
+   if(report[name]) then
+    report[name] = report[name] + c
+   else
+    report[name] = c
+   end
+  end
+  count = count + 1
+ end  --end while
+ vehicles[v.hash]["report"] = report
+ vehicles[v.hash]["percent"] = stackCount / inv.size * 100
+ vehicles[v.hash]["lastTripTime"] = computer.millis() - vehicles[v.hash]["lastTrip"]
+ printReports()
+ vehicles[v.hash]["lastTrip"] = computer.millis()
+end
+
 function mainLoop()
+ print("Looping")
  while(true) do
   e, sender, veh = event.pull(0)
   if (e == "OnVehicleEnter") then
-   local inv = veh:getStorageInv()
-   local count = 1
-   local stackCount = 0
-   while (count < inv.size) do
-    local s = inv:getStack(count)
-    if (s and s.count > 0) then stackCount = stackCount + 1 end
-    count = count + 1
-   end
-   if (sender == ts1) then
-    if(veh.isSelfDriving) then gpu:setText(0, 0, sender.nick .. " : " .. stackCount / inv.size * 100 .. "% full         ") end
-    ts1:setColor(1, 0, 0, 1)
-   end
-   if (sender == ts2) then
-    if(veh.isSelfDriving) then gpu:setText(0, 1, sender.nick .. " : " .. stackCount / inv.size * 100 .. "% full         ") end
-    ts2:setColor(1, 0, 0, 1)
-   end
-   gpu:flush()
-   if(veh.isSelfDriving) then
-    print(sender.nick .. " : " .. stackCount / inv.size * 100 .. "% full")
-   else
-    print ("Vehicle was not self driving.")
-   end
+   if(veh.isSelfDriving) then updateVehicle(veh,sender) end
+   sender:setColor(1, 0, 0, 1)
+   if(not veh.isSelfDriving) then print ("Vehicle was not self driving.") end
    computer.beep()
   elseif (e == "OnVehicleExit") then
-   if (sender == ts1) then ts1:setColor(1, 0, 0, 0) end
-   if (sender == ts2) then ts2:setColor(1, 0, 0, 0) end
+   sender:setColor(1, 0, 0, 0) 
   end
  end
 end
+
+-- ********************* Globals ******************
+vehicles = {}
 
 --main chunk
 local gpus = computer.getPCIDevices(findClass("GPUT1"))
@@ -49,7 +102,7 @@ local screen = component.proxy("9F80B1FD4D6D92754BF44B88A421EAB8")
 if not screen then error("No screen") end
 
 gpu:bindScreen(screen)
-gpu:setSize(25, 2)
+gpu:setSize(50, 20)
 clearScreen(gpu)
 
 ts1 = component.proxy("4AA24AF14328B63152360BA5A69AC8F8")
