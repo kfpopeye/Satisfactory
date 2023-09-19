@@ -5,6 +5,10 @@ itemMaxLimit = 0 -- setting this to greater than 0 will fill container with this
 
 debug = true -- supresses debug comments
 
+--If there is no console panel, uncomment these 2 lines below to make unit process passthrough ports only
+--needsRefill = false
+--itemsInTransit = 100
+
 -- Important information
 -- 1. Merger names must follow the format "groupName part direction direction"
 --    where direction indicates 2 optional passthru ports = middle (or centre), left or right
@@ -45,6 +49,24 @@ function tableLength(T)
 end
 
 function updateInfo()
+ updateScreenInfo()
+ updatePanelInfo()
+end
+
+function updatePanelInfo()
+ if (not hasPanel) then return end
+ local t = convertToTime(refillTimeOut - (computer.millis() - lastTransferTime))
+ progScreen.text = "Items transitting: " .. itemsInTransit .. "\nTime out in: " .. t
+
+ if (itemsInTransit == 0 and not needsRefill) then 
+  progScreen.text = "**** COMPLETE ****"
+ end
+ if (timedOut) then 
+  progScreen.text = "**** TIMED OUT ****"
+ end 
+end
+
+function updateScreenInfo()
  if not hasScreen then return end
  local row = 26
  local col = 0
@@ -110,16 +132,16 @@ function updateInfo()
    col = col + 30
   end
  end
- if (hasPanel) then
-  progScreen.Text = pScreenTxt
-  if (lever.state) then progScreen.text = "Pass through mode" end
- end
  gpu:flush()
  if (debug) then print() end
 end
 
--- passing a string will add it to the buffer, passing nil will display buffer to screen
-function printInventoryToScreen(slotNum, name, count, max)
+function printInventoryToScreen()
+ addInventoryToScreenBuffer()
+end
+
+-- passing a slotNum will add it to the buffer, passing nil will display buffer to screen
+function addInventoryToScreenBuffer(slotNum, name, count, max)
  if not hasScreen then return end
 
  if not inventoryBuffer then inventoryBuffer = {} end
@@ -193,9 +215,9 @@ function createInventoryList()
     end
    end
    print(" Slot", i, name, c, m)
-   printInventoryToScreen(i, name, c, m) 
+   addInventoryToScreenBuffer(i, name, c, m) 
   else
-   printInventoryToScreen(i, "Empty", 0, 0)
+   addInventoryToScreenBuffer(i, "Empty", 0, 0)
   end
   i = i + 1
  end
@@ -344,6 +366,7 @@ function refillContainer()
  end -- endwhile
 end
 
+-- this is executed only if there is a console panel
 function waitForStart()
 -- reset globals
  mergerCount = 0
@@ -351,10 +374,11 @@ function waitForStart()
  lastTransferTime = computer.millis()
  timedOut = false
  needsRefill = true
-
- print("Waiting for start......")
  local waiting = true
  button:setColor(1,1,0)
+ print("Waiting for start......")
+ infoScreen.text = "Waiting to start..."
+
  while (waiting) do
   e, sender = event.pull(0)
   if (e == "Trigger" and sender == button) then
@@ -363,15 +387,20 @@ function waitForStart()
    computer.beep()
   elseif (e == "ChangeState" and sender == lever) then
    if (lever.state) then
+    print ("Setting pass thru mode on")
+    infoScreen.text = "Setting pass thru mode on.\nPush button to start..."
     needsRefill = false
     itemsInTransit = 100
    else
+    print ("Setting pass thru mode off")
+    infoScreen.text = "Setting pass thru mode off.\nWaiting to start..."
     needsRefill = true
     itemsInTransit = 0
    end
    computer.beep()
   end
  end
+
 end
 
 -- ***************** constants ********************
@@ -430,20 +459,15 @@ else
  print("No control panel found")
 end
 event.clear()
-if (hasPanel) then infoScreen.text = "Waiting to start..." end
 
 -- ***************** main ********************
 ::startMain::
 if (hasPanel) then waitForStart() end
 
---uncomment these 2 lines below to make unit process passthrough ports only
---needsRefill = false
---itemsInTransit = 100
-
 --check if anything needs to be refilled
 slotsToRefill = createInventoryList()
 local count = tableLength(slotsToRefill)
-if count == 0 then
+if (count == 0) then
  needsRefill = false
  print("No slots were partially filled. Nothing to do.")
  if (hasPanel) then infoScreen.text = "No slots were partially filled.\nNothing to do." end
