@@ -54,9 +54,17 @@ function updateInfo()
 end
 
 function updatePanelInfo()
+ -- text displays are 30 char wide
  if (not hasPanel) then return end
+
  local t = convertToTime(refillTimeOut - (computer.millis() - lastTransferTime))
- progScreen.text = "Items transitting: " .. itemsInTransit .. "\nTime out in: " .. t
+ local n = "\n"
+ for _, infoTable in pairs(slotsToRefill) do
+  if ( #(n .. infoTable["name"]) > 30 ) then n = n .. "\n" end
+  n = n .. infoTable["name"]
+  if (not infoTable == slotsToRefill[#slotsToRefill]) then n = n .. "," end
+ end
+ progScreen.text = "Time out in: " .. t .. "\nItems transitting: " .. itemsInTransit .. n
 
  if (itemsInTransit == 0 and not needsRefill) then 
   progScreen.text = "**** COMPLETE ****"
@@ -124,7 +132,7 @@ function updateScreenInfo()
   else
    gpu:setForeground(1,1,0,1) --yellow
   end
-  gpu:setText(col, row, n .. " (" .. infoTable["count"] .. "\\" .. infoTable["max"] .. ")") --"keeps colour formatting
+  gpu:setText(col, row, n .. " (" .. infoTable["count"] .. "\\" .. infoTable["max"] .. ")")
   pScreenTxt = pScreenTxt .. n .. "\n"
   row = row + 1
   if (row == rowStart + 12) then
