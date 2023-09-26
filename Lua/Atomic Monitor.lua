@@ -216,8 +216,9 @@ if not screen then error("No screen") end
 net = computer.getPCIDevices(findClass("NetworkCard"))[1]
 if not net then error("No network card") end
 
---ATOMICBAY 42
+-- ATOMICBAY 42
 -- ATOMICAVE 43
+-- ATOMICWATERFALL 44
 port = 43
 siteNick = "ATOMICCAVE"
 
