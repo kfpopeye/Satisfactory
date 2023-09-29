@@ -1,3 +1,9 @@
+function wait (a) 
+    local sec = tonumber(computer.millis() + (a * 1000)); 
+    while (computer.millis() < sec) do 
+    end 
+end
+
 function clearScreen(g)
  local w,h = g:getSize()
  g:setForeground(1,1,1,1)
@@ -6,33 +12,90 @@ function clearScreen(g)
  g:flush()
 end
 
-function convertToTime(ms)
- if(not ms) then print ("convertToTime() received nil") end
- if ms < 0 then ms = 0 end
- local tenths = ms // 100
- local hh = (tenths // (60 * 60 * 10)) % 24
- local mm = (tenths // (60 * 10)) % 60
- local ss = (tenths // 10) % 60
- local t = tenths % 10
- return string.format("%02d:%02d:%02d.%01d", hh, mm, ss, t)
+function convertSecToTime(time)
+ if(not time) then print ("convertSecToTime() received nil") end
+ if time < 0 then time = 0 end
+ time = time / ETfactor
+ local days = math.floor(time / 86400)
+ local hours = math.floor((time % 86400) / 3600)
+ local minutes = math.floor(((time % 86400) % 3600) / 60)
+ local seconds = math.floor((((time % 86400) % 3600) % 60))
+ return string.format("%d:%02d:%02d:%02d",days,hours,minutes,seconds)
+end
+
+function loadTruckData()
+ local truckFiles = fs.childs("/")
+ if (#truckFiles == 1) then
+  print("No truck data found but thats OK.")
+  return
+ end
+
+ for _, tFile in pairs(truckFiles) do
+  if (tFile ~= "dev") then
+   print("Processing: " .. tFile)
+   local vehFile = fs.open("/" .. tFile, "r")
+   vehFile:seek("set")
+   local veh_hash = tonumber(fs.path(4, tFile))
+   local t1 = vehFile:read(999)
+   vehFile:close()
+
+   local lines = {}
+   local i = 1
+   for line in t1:gmatch("([^\n]*)\n?") do
+    lines[i] = line
+    i = i + 1
+   end
+   local data = {}
+   data["scanner"] = lines[1]
+   data["percent"] = tonumber(lines[2])
+   data["lastTripTime"] = tonumber(lines[3])
+   data["lastTrip"] = tonumber(lines[4])
+   vehicles[lines[1]] = data
+  end
+ end
+end
+
+function saveVehicleData(scannerNick)
+ if (not hasHDD) then return end
+
+ local vehFile
+ local filePath = "/" .. scannerNick .. ".scanner"
+ if (fs.exists(filePath)) then
+  vehFile = fs.remove(filePath)
+ end
+ vehFile = fs.open(filePath, "w")
+
+ vehFile:write(vehicles[scannerNick]["scanner"], "\n")
+ vehFile:write(vehicles[scannerNick]["percent"], "\n")
+ vehFile:write(vehicles[scannerNick]["lastTripTime"], "\n")
+ vehFile:write(vehicles[scannerNick]["lastTrip"])
+ vehFile:close()
 end
 
 function printReports()
  clearScreen(gpu)
  local row = 0
+ gpu:setText(0, row, "Times are shown in earth standard.")
+ row = row + 1
 
  for _, v in pairs(vehicles) do  
-  gpu:setText(0, row, v["scanner"] .. "   Time since last: " .. convertToTime(computer.millis() - v["lastTrip"]))
+  gpu:setText(0, row, v["scanner"] .. "   Time since last: " .. convertSecToTime(computer.time() - v["lastTrip"]))
   row = row + 1
-   if (v["lastTripTime"] < 100) then
-   gpu:setText(1, row, v["percent"] .. "% full. Trip time: N\\A")
+  local percent = string.format("%.2f", v["percent"])
+  if (v["lastTripTime"] < 10) then
+   gpu:setText(1, row, percent .. "% full. Trip time: N\\A")
   else
-   gpu:setText(1, row, v["percent"] .. "% full. Trip time: " .. convertToTime(v["lastTripTime"]))
+   gpu:setText(1, row, percent .. "% full. Trip time: " .. convertSecToTime(v["lastTripTime"]))
   end
  
-  for n, c in pairs(v["report"]) do
+  if (v["report"]) then
+   for n, c in pairs(v["report"]) do
+    row = row + 1
+    gpu:setText(2, row, n .. ": " .. c)
+   end
+  else
    row = row + 1
-   gpu:setText(2, row, n .. ": " .. c)
+   gpu:setText(2, row, "No previous report.")
   end
   row = row + 2
  end
@@ -40,11 +103,11 @@ function printReports()
 end
 
 function updateVehicle(v, scanner)
- if (vehicles[v.hash] == nil) then
+ if (vehicles[scanner.nick] == nil) then
   local data = {}
-  data["lastTrip"] = computer.millis()
+  data["lastTrip"] = computer.time()
   data["scanner"] = scanner.nick
-  vehicles[v.hash] = data
+  vehicles[scanner.nick] = data
  end
 
  local inv = v:getStorageInv()
@@ -67,21 +130,26 @@ function updateVehicle(v, scanner)
   end
   count = count + 1
  end  --end while
- vehicles[v.hash]["report"] = report
- vehicles[v.hash]["percent"] = stackCount / inv.size * 100
- vehicles[v.hash]["lastTripTime"] = computer.millis() - vehicles[v.hash]["lastTrip"]
- vehicles[v.hash]["lastTrip"] = computer.millis()
- print(vehicles[v.hash]["scanner"] .. " : " .. vehicles[v.hash]["percent"] .. "% full")
+
+ vehicles[scanner.nick]["report"] = report
+ vehicles[scanner.nick]["percent"] = stackCount / inv.size * 100
+ vehicles[scanner.nick]["lastTripTime"] = computer.time() - vehicles[scanner.nick]["lastTrip"]
+ vehicles[scanner.nick]["lastTrip"] = computer.time() -- GAME time (faster) not real time
+ saveVehicleData(scanner.nick)
+ print(scanner.nick .. " : " .. vehicles[scanner.nick]["percent"] .. "% full")
 end
 
 function mainLoop()
  print("Looping")
  while(true) do
-  e, sender, veh = event.pull(15)
+  e, sender, veh = event.pull(1)
   if (e == "OnVehicleEnter") then
-   if(veh.isSelfDriving) then updateVehicle(veh,sender) end
+   if(veh.isSelfDriving) then
+    updateVehicle(veh, sender)
+   else
+    print ("Vehicle was not self driving.")
+   end
    sender:setColor(1, 0, 0, 1)
-   if(not veh.isSelfDriving) then print ("Vehicle was not self driving.") end
    computer.beep()
   elseif (e == "OnVehicleExit") then
    sender:setColor(1, 0, 0, 0) 
@@ -92,6 +160,10 @@ end
 
 -- ********************* Globals ******************
 vehicles = {}
+ETfactor = 1
+
+local earthTime = computer.time()
+local compTime = computer.millis() / 1000
 
 --main chunk
 local gpus = computer.getPCIDevices(findClass("GPUT1"))
@@ -111,9 +183,37 @@ if not ts1 then error("Scanner 1 is missing") end
 ts2 = component.proxy("106C4BF2436BAF5583FD04ABEA480F9B")
 if not ts2 then error("Scanner 2 is missing") end
 
+event.clear()
 event.listen(ts1)
 event.listen(ts2)
-event.clear()
+
+hasHDD = false
+-- Shorten name
+fs = filesystem
+-- Initialize /dev
+if fs.initFileSystem("/dev") == false then
+    computer.panic("Cannot initialize /dev")
+end
+-- find HD
+local drive_uuid
+for idx, drive in pairs(fs.childs("/dev")) do
+ if(drive ~= "serial") then drive_uuid = drive end
+end
+-- Mount our drive to root
+fs.mount("/dev/"..drive_uuid, "/")
+if(fs.exists("/")) then
+ print("Harddrive found. Data will be persistent.")
+ hasHDD = true
+ loadTruckData()
+else
+ print("NO harddrive found!")
+end
+
+printReports()
+
+wait(5)
+ETfactor = ( (computer.time() - earthTime) / ((computer.millis()/1000) - compTime) )
+print(ETfactor)
 
 --start refilling containers
 local status, err = pcall(mainLoop)
