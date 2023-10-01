@@ -3,7 +3,7 @@ groupName = "tickle" -- if all the codeable mergers are grouped, enter the group
                      -- all codeable mergers will be used.
 itemMaxLimit = 0 -- setting this to greater than 0 will fill container with this many of each item, instead of filling partial stacks
 
-debug = true -- supresses debug comments
+debug = false -- supresses debug comments
 
 --If there is no console panel, uncomment these 2 lines below to make unit process passthrough ports only
 --needsRefill = false
@@ -224,6 +224,7 @@ function createInventoryList()
      print(" Slot", i, name, c, m)
     end
    end
+   if (debug) then print(" Slot", i, name, c, m) end
    addInventoryToScreenBuffer(i, name, c, m) 
   else
    addInventoryToScreenBuffer(i, "Empty", 0, 0)
