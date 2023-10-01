@@ -14,13 +14,19 @@ debug = true -- supresses debug comments
 --    where direction indicates 2 optional passthru ports = middle (or centre), left or right
 -- 2. Tabbed screen and control panel are option but control panel must have 2 text screens, a button and a lever.
 
+function wait (a) 
+    local sec = tonumber(computer.millis() + (a * 1000)); 
+    while (computer.millis() < sec) do 
+    end 
+end
+
 --clears the screen tab
 function clearTabScreen()
  if not hasScreen then return end
  local w,h = gpu:getSize()
  gpu:setForeground(1,1,1,1)
  gpu:setBackground(0,0,0,0)
- gpu:fill(0,0,w,h,".")
+ gpu:fill(0,0,w,h," ")
  gpu:flush()
 end
 
@@ -58,20 +64,14 @@ function updatePanelInfo()
  if (not hasPanel) then return end
 
  local t = convertToTime(refillTimeOut - (computer.millis() - lastTransferTime))
- local n = "\n"
- for _, infoTable in pairs(slotsToRefill) do
-  if ( #(n .. infoTable["name"]) > 30 ) then n = n .. "\n" end
-  n = n .. infoTable["name"]
-  if (not infoTable == slotsToRefill[#slotsToRefill]) then n = n .. "," end
- end
- progScreen.text = "Time out in: " .. t .. "\nItems transitting: " .. itemsInTransit .. n
+ progScreen.text = "Time out in: " .. t .. "\nItems transitting: " .. itemsInTransit .. "\nTypes transitting: " .. tableLength(slotsToRefill)
 
  if (itemsInTransit == 0 and not needsRefill) then 
   progScreen.text = "**** COMPLETE ****"
  end
  if (timedOut) then 
   progScreen.text = "**** TIMED OUT ****"
- end 
+ end
 end
 
 function updateScreenInfo()
@@ -106,6 +106,7 @@ function updateScreenInfo()
  end
  row = row + 1
 
+ if (mergerCount == -1) then getMergers() end
  gpu:setText(col, row, "Codeable mergers found: " .. mergerCount)
  row = row + 1
  local s = "Time out in: " .. convertToTime(refillTimeOut - (computer.millis() - lastTransferTime))
@@ -155,11 +156,11 @@ function addInventoryToScreenBuffer(slotNum, name, count, max)
  if not inventoryBuffer then inventoryBuffer = {} end
  if (slotNum) then
   local msg = nil
+   local s = string.format("%-2s", (slotNum + 1))
    if count == 0 and max == 0 then
-    msg = "Slot #" .. (slotNum + 1) .. ": Empty"
+    msg = "Slot #" .. s .. ": Empty"
    else
-    msg = "Slot #" .. (slotNum + 1) .. ": " .. string.sub((name .. "                              "), 1, 30) .. " (" .. count .. "\\" .. max .. ")"
-           --"keeps colour formatting
+    msg = "Slot #" .. s .. ": " .. string.sub((name .. "                              "), 1, 30) .. " (" .. count .. "\\" .. max .. ")"
    end
    table.insert(inventoryBuffer, msg)
  else
@@ -220,9 +221,9 @@ function createInventoryList()
      info["name"] = name
      info["mrgrId"] = nil
      lowInventories[intName] = info
+     print(" Slot", i, name, c, m)
     end
    end
-   print(" Slot", i, name, c, m)
    addInventoryToScreenBuffer(i, name, c, m) 
   else
    addInventoryToScreenBuffer(i, "Empty", 0, 0)
@@ -416,7 +417,7 @@ direction = {left = 2, middle = 1, right = 0}
 refillTimeOut = 5 * 60 * 1000 --5 min in ms
 
 -- ***************** globals ********************
-mergerCount = 0
+mergerCount = -1
 itemsInTransit = 0
 lastTransferTime = computer.millis()
 timedOut = false
@@ -470,20 +471,30 @@ event.clear()
 
 -- ***************** main ********************
 ::startMain::
-if (hasPanel) then waitForStart() end
+if (hasPanel) then
+ createInventoryList()
+ printInventoryToScreen()
+ waitForStart()
+end
 
 --check if anything needs to be refilled
 slotsToRefill = createInventoryList()
 local count = tableLength(slotsToRefill)
+
 if (count == 0) then
  needsRefill = false
  print("No slots were partially filled. Nothing to do.")
  if (hasPanel) then infoScreen.text = "No slots were partially filled.\nNothing to do." end
  computer.beep()
+ wait(2)
 else
  needsRefill = true
  if (hasPanel) then infoScreen.text = "Refilling in progress." end
- printInventoryToScreen()
+end
+
+if (lever.state) then
+ needsRefill = false
+ itemsInTransit = 100
 end
 
 --start refilling containers
