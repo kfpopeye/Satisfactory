@@ -15,9 +15,8 @@ debug = false -- supresses debug comments
 -- 2. Tabbed screen and control panel are option but control panel must have 2 text screens, a button and a lever.
 
 function wait (a) 
-    local sec = tonumber(computer.millis() + (a * 1000)); 
-    while (computer.millis() < sec) do 
-    end 
+ local sec = tonumber(computer.millis() + (a * 1000)); 
+ while (computer.millis() < sec) do end 
 end
 
 --clears the screen tab
@@ -133,7 +132,7 @@ function updateScreenInfo()
   else
    gpu:setForeground(1,1,0,1) --yellow
   end
-  gpu:setText(col, row, n .. " (" .. infoTable["count"] .. "\\" .. infoTable["max"] .. ")")
+  gpu:setText(col, row, n .. " (" .. (infoTable["count"] .. " + " .. infoTable["inTransit"]) .. "\\" .. infoTable["max"] .. ")")
   pScreenTxt = pScreenTxt .. n .. "\n"
   row = row + 1
   if (row == rowStart + 12) then
@@ -195,7 +194,17 @@ function addInventoryToScreenBuffer(slotNum, name, count, max)
  end
 end
 
---scans the container and creates a list of anything thats a partial stack
+function rescanContainer()
+ local newList = createInventoryList()
+ for intName, infoTable in pairs(newList) do
+  if (slotsToRefill[intName]) then
+   newList[intName]["inTransit"] = slotsToRefill[intName]["inTransit"]
+  end
+ end
+ slotsToRefill = newList
+end
+
+--scans the container and returns a list of anything thats a partial stack
 function createInventoryList()
  print("Scanning container...")
  local lowInventories = {}
@@ -220,6 +229,7 @@ function createInventoryList()
      info["count"] = c
      info["name"] = name
      info["mrgrId"] = nil
+     info["inTransit"] = 0
      lowInventories[intName] = info
      print(" Slot", i, name, c, m)
     end
@@ -296,11 +306,18 @@ function findMerger(intName)
 end
 
 function checkEvents()
- e, sender = event.pull(0)
+ e, sender, val1 = event.pull(0)
  if (e == "ItemTransfer") then
-  itemsInTransit = itemsInTransit - 1
+  if (slotsToRefill and slotsToRefill[val1.type.internalName]) then
+   itemsInTransit = itemsInTransit - 1
+   slotsToRefill[val1.type.internalName]["inTransit"] = slotsToRefill[val1.type.internalName]["inTransit"] - 1
+   slotsToRefill[val1.type.internalName]["count"] = slotsToRefill[val1.type.internalName]["count"] + 1
+  else
+   print("Received unexpected item: " .. val1.type.Name)
+  end
  elseif (e == "Trigger" and sender == button) then
-  infoScreen.Text = "Already refilling."
+  infoScreen.Text = "Rescanning...."
+  rescanContainer()
   computer.beep()
  elseif (e == "ChangeState" and sender == lever) then
   event.ignore(lever)
@@ -334,7 +351,7 @@ function processPassthruInputs()
    end
    x = x + 1
   end --endwhile
-  if dbgMsg then print(dbgMsg) end
+  if (debug and dbgMsg) then print(dbgMsg) end
  end --endfor
  if (debug) then print() end
 end
@@ -344,7 +361,7 @@ function refillContainer()
   needsRefill = false
   for intName, infoTable in pairs(slotsToRefill) do
    local dbgMsg = nil
-   if(slotsToRefill[intName]["count"] < slotsToRefill[intName]["max"]) then
+   if(slotsToRefill[intName]["count"] + slotsToRefill[intName]["inTransit"] < slotsToRefill[intName]["max"]) then
     needsRefill = true
     local merger, input = findMerger(intName)
     if(merger) then
@@ -353,7 +370,7 @@ function refillContainer()
      if merger.canOutput and merger:transferItem(input) then
        lastTransferTime = computer.millis()
        itemsInTransit = itemsInTransit + 1
-       slotsToRefill[intName]["count"] = slotsToRefill[intName]["count"] + 1
+       slotsToRefill[intName]["inTransit"] = slotsToRefill[intName]["inTransit"] + 1
      else
       dbgMsg = dbgMsg .. " but cannot transfer."
      end
@@ -427,9 +444,9 @@ needsRefill = true
 -- ***************** devices ********************
 hasScreen = false
 local screen = computer.getPCIDevices(findClass("FINComputerScreen"))[1]
-if not screen then print("No Screen found. Did you add a screen driver?") end
+if not screen then print("No Screen found. Add a screen driver for improved information output.") end
 gpu = computer.getPCIDevices(findClass("GPUT1"))[1]
-if not gpu then print("No GPU found. Did you add a graphical processing unit T1?") end
+if not gpu then print("No GPU found. Add a graphical processing unit T1 for improved information output.") end
 if screen and gpu then
  gpu:bindScreen(screen)
  gpu:setSize(120, 50)
@@ -466,7 +483,7 @@ if (panel) then
  event.listen(lever)
  event.listen(button)
 else
- print("No control panel found")
+ print("Add a control panel for better functionality.")
 end
 event.clear()
 
@@ -493,7 +510,7 @@ else
  if (hasPanel) then infoScreen.text = "Refilling in progress." end
 end
 
-if (lever.state) then
+if (hasPanel and lever.state) then
  needsRefill = false
  itemsInTransit = 100
 end
@@ -509,6 +526,7 @@ if not status then
   progScreen.Text = "ERROR"
   infoScreen.Text = "An error has occured.\nRefer to the console for more details."
  end
+ computer.stop()
 end
 
 if (hasPanel) then infoScreen.text = "Refill complete.\nWaiting for transitting items." end
