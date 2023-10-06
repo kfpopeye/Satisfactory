@@ -200,7 +200,9 @@ for idx, drive in pairs(fs.childs("/dev")) do
  if(drive ~= "serial") then drive_uuid = drive end
 end
 -- Mount our drive to root
-fs.mount("/dev/"..drive_uuid, "/")
+if (drive_uuid) then
+ fs.mount("/dev/"..drive_uuid, "/")
+end
 if(fs.exists("/")) then
  print("Harddrive found. Data will be persistent.")
  hasHDD = true
