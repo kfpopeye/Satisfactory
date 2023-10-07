@@ -40,99 +40,79 @@ function updateData(data, ctable, ftable)
   end
 end
 
-function updateScreen()
- clearScreen(gpu)
+function updateScreen(g, cont, fact, name)
+ clearScreen(g)
  local row = 0
  local col = 0
 
--- ********************************************** ATOMIC BAY
- gpu:setBackground(0, 1.0, 0.5, 0.5)
- gpu:setForeground(0, 0, 0, 1)
- gpu:setText(col, row, string.format("%-59s", "Atomic Bay Monitoring")) --55 chars (padded with spaces after)
+ g:setBackground(0, 1.0, 0.5, 0.5)
+ g:setForeground(0, 0, 0, 1)
+ g:setText(col, row, string.format("%-59s", name .. " Monitoring")) --55 chars (padded with spaces after)
  row = row + 1
 
- gpu:setBackground(0, 0.5, 1.0, 0.5)
- gpu:setForeground(0, 0, 0, 1)
- gpu:setText(col, row, string.format("%-54s", "Factories Output\\Input Status")) --55 chars (padded with spaces after)
- gpu:setBackground(0,0,0,0)
- gpu:setForeground(1,1,1,1)
+ g:setBackground(0, 0.5, 1.0, 0.5)
+ g:setForeground(0, 0, 0, 1)
+ g:setText(col, row, string.format("%-54s", "Factories Output\\Input Status")) --55 chars (padded with spaces after)
+ g:setBackground(0,0,0,0)
+ g:setForeground(1,1,1,1)
  row = row + 1
- if (tableLength(factoriesPort42) == 0) then gpu:setText(col + 1, row, "No factories") end
- for n, m in pairs(factoriesPort42) do
+ if (tableLength(fact) == 0) then g:setText(col + 1, row, "No factories") end
+ for n, m in pairs(fact) do
   local prod = "(" .. m["productivity"] .. "%) "
-  gpu:setText(col + 1, row, n .. prod .. m["outputs"])
+  g:setText(col + 1, row, n .. prod .. m["outputs"])
   row = row + 1
   local indent = " "
   while (indent:len() < (n:len() + prod:len())) do indent = indent .. " " end
-  gpu:setText(col + 1, row, indent .. m["inputs"])
+  g:setText(col + 1, row, indent .. m["inputs"])
   row = row + 1
  end
 
  row = row + 1
- gpu:setBackground(0, 0.5, 1.0, 0.5)
- gpu:setForeground(0, 0, 0, 1)
- gpu:setText(col, row, string.format("%-54s", "Container Inventory")) --55 chars (padded with spaces after)
- gpu:setBackground(0,0,0,0)
- gpu:setForeground(1,1,1,1)
+ g:setBackground(0, 0.5, 1.0, 0.5)
+ g:setForeground(0, 0, 0, 1)
+ g:setText(col, row, string.format("%-54s", "Container Inventory")) --55 chars (padded with spaces after)
+ g:setBackground(0,0,0,0)
+ g:setForeground(1,1,1,1)
  row = row + 1
- if (tableLength(containersPort42) == 0) then gpu:setText(col + 1, row, "No containers") end
- for n, m in pairs(containersPort42) do
-  gpu:setText(col + 1, row, string.format("%-20s", n) .. string.format("%3s", m) .. "%")
-  row = row + 1
- end
-
--- ********************************************** ATOMIC CAVE
- local row = 0
- local col = 60
- gpu:setBackground(0, 1.0, 0.5, 0.5)
- gpu:setForeground(0, 0, 0, 1)
- gpu:setText(col, row, string.format("%-59s", "Atomic Cave Monitoring")) --55 chars (padded with spaces after)
- row = row + 1
-
- gpu:setBackground(0, 0.5, 1.0, 0.5)
- gpu:setForeground(0, 0, 0, 1)
- gpu:setText(col, row, string.format("%-54s", "Factories Output\\Input Status")) --55 chars (padded with spaces after)
- gpu:setBackground(0,0,0,0)
- gpu:setForeground(1,1,1,1)
- row = row + 1
- if (tableLength(factoriesPort43) == 0) then gpu:setText(col + 1, row, "No factories") end
- for n, m in pairs(factoriesPort43) do
-  local prod = "(" .. m["productivity"] .. "%) "
-  gpu:setText(col + 1, row, n .. prod .. m["outputs"])
-  row = row + 1
-  local indent = " "
-  while (indent:len() < (n:len()+prod:len())) do indent = indent .. " " end
-  gpu:setText(col + 1, row, indent .. m["inputs"])  row = row + 1
- end
-
- row = row + 1
- gpu:setBackground(0, 0.5, 1.0, 0.5)
- gpu:setForeground(0, 0, 0, 1)
- gpu:setText(col, row, string.format("%-54s", "Container Inventory")) --55 chars (padded with spaces after)
- gpu:setBackground(0,0,0,0)
- gpu:setForeground(1,1,1,1)
- row = row + 1
- if (tableLength(containersPort43) == 0) then gpu:setText(col + 1, row, "No containers") end
- for n, m in pairs(containersPort43) do
-  gpu:setText(col + 1, row, string.format("%-20s", n) .. string.format("%3s", m) .. "%")
+ if (tableLength(cont) == 0) then g:setText(col + 1, row, "No containers") end
+ for n, m in pairs(cont) do
+  g:setText(col + 1, row, string.format("%-20s", n) .. string.format("%3s", m) .. "%")
   row = row + 1
  end
  
- gpu:setText(0, 33, "Runtime: " .. convertToTime(computer.millis()))
- gpu:flush()
+ g:setText(0, 33, "Runtime: " .. convertToTime(computer.millis()))
+ g:flush()
 end
 
 --main chunk
 local gpus = computer.getPCIDevices(findClass("GPUT1"))
 gpu = gpus[1]
+gpu2 = gpus[2]
+gpu3 = gpus[3]
 if not gpu then error("No GPU T1 found!") end
+if not gpu2 then error("Not enough GPU T1 found!") end
+if not gpu3 then error("Noot enough GPU T1 found!") end
 
-local screen = component.proxy("AB23A01048A8DA61D40B91AE992645F3")
-if not screen then error("No screen") end
+local screen = component.proxy("743180E64BC0AB48F24129B7BAF5376F")
+if not screen then error("No screen1") end
 
 gpu:bindScreen(screen)
-gpu:setSize(120, 34)
+gpu:setSize(60, 35)
 clearScreen(gpu)
+
+local screen1 = component.proxy("004226D74A993E3FDAF631B6EA49DBDB")
+if not screen1 then error("No screen2") end
+
+gpu2:bindScreen(screen1)
+gpu2:setSize(60, 35)
+clearScreen(gpu2)
+
+local screen2 = component.proxy("794298474FB98875C93B8A82D2A621D8")
+if not screen2 then error("No screen3") end
+
+gpu3:bindScreen(screen2)
+gpu3:setSize(60, 35)
+clearScreen(gpu3)
 
 local net = computer.getPCIDevices(findClass("NetworkCard"))[1]
 if not net then error("No network card") end
@@ -142,6 +122,7 @@ event.clear()
 event.listen(net)
 net:open(42)
 net:open(43)
+net:open(44)
 
 print("Opened ports")
 
@@ -149,6 +130,8 @@ containersPort42 = {}
 factoriesPort42 = {}
 containersPort43 = {}
 factoriesPort43 = {}
+containersPort44 = {}
+factoriesPort44 = {}
 
 while true do
  local data = {event.pull()}
@@ -160,9 +143,13 @@ while true do
   print("Updating data from port: " .. port)
   if (port == 42) then
    updateData(data, containersPort42, factoriesPort42)
+   updateScreen(gpu, containersPort42, factoriesPort42, "Atomic Bay")
   elseif (port == 43) then
    updateData(data, containersPort43, factoriesPort43)
+   updateScreen(gpu2 , containersPort43, factoriesPort43, "Atomic Cave")
+  elseif (port == 44) then
+   updateData(data, containersPort44, factoriesPort44)
+   updateScreen(gpu3, containersPort44, factoriesPort44, "Atomic Waterfall")
   end
-  updateScreen()
  end
 end
