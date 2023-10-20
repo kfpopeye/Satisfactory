@@ -1,3 +1,9 @@
+-- -------------------------------------------------------------
+-- |                                                           |
+-- |   Hub atmoic report.lua                                   |
+-- |                                                           |
+-- -------------------------------------------------------------
+
 function clearScreen(g)
  local w,h = g:getSize()
  g:setBackground(0, 0, 0, 0)
@@ -57,13 +63,20 @@ function updateScreen(g, cont, fact, name)
  g:setForeground(1,1,1,1)
  row = row + 1
  if (tableLength(fact) == 0) then g:setText(col + 1, row, "No factories") end
+
+ local list = {}
  for n, m in pairs(fact) do
-  local prod = "(" .. m["productivity"] .. "%) "
-  g:setText(col + 1, row, n .. prod .. m["outputs"])
+  table.insert(list, n)
+ end
+ table.sort(list)
+
+ for _, n in ipairs(list) do
+  local prod = "(" .. fact[n]["productivity"] .. "%) "
+  g:setText(col + 1, row, n .. prod .. fact[n]["outputs"])
   row = row + 1
   local indent = " "
   while (indent:len() < (n:len() + prod:len())) do indent = indent .. " " end
-  g:setText(col + 1, row, indent .. m["inputs"])
+  g:setText(col + 1, row, indent .. fact[n]["inputs"])
   row = row + 1
  end
 
@@ -75,8 +88,15 @@ function updateScreen(g, cont, fact, name)
  g:setForeground(1,1,1,1)
  row = row + 1
  if (tableLength(cont) == 0) then g:setText(col + 1, row, "No containers") end
+
+ list = {}
  for n, m in pairs(cont) do
-  g:setText(col + 1, row, string.format("%-20s", n) .. string.format("%3s", m) .. "%")
+  table.insert(list, n)
+ end
+ table.sort(list)
+
+ for _, n in ipairs(list) do
+  g:setText(col + 1, row, string.format("%-20s", n) .. string.format("%3s", cont[n]) .. "%")
   row = row + 1
  end
  
@@ -93,14 +113,14 @@ if not gpu then error("No GPU T1 found!") end
 if not gpu2 then error("Not enough GPU T1 found!") end
 if not gpu3 then error("Noot enough GPU T1 found!") end
 
-local screen = component.proxy("743180E64BC0AB48F24129B7BAF5376F")
+local screen = component.proxy("4F8274834B39B22D65249A94EFE1FDC3")
 if not screen then error("No screen1") end
 
 gpu:bindScreen(screen)
 gpu:setSize(60, 35)
 clearScreen(gpu)
 
-local screen1 = component.proxy("004226D74A993E3FDAF631B6EA49DBDB")
+local screen1 = component.proxy("EF91DFE946A42BC390D557B6D11E7915")
 if not screen1 then error("No screen2") end
 
 gpu2:bindScreen(screen1)
