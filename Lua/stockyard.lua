@@ -1,10 +1,10 @@
 function catalogContainers()
  local containers = component.proxy(component.findComponent("stockyard"))
  if not containers then error("Containers was nil") end
+
  for _, cntr in pairs(containers) do
   local invs = cntr:getInventories()[1]
   local name = "Unused"
-
   if(invs) then -- fluid buffers do not have an inventory
    local t = nil
    local stack = invs:getStack(0)
@@ -13,10 +13,14 @@ function catalogContainers()
   else
    name = cntr:getFluidType().name
   end
-
-  print (cntr.hash, name)
-  containerHashAndName[cntr.hash] = name
+  table.insert(containerHashAndName, {cntr.hash, name})
  end
+
+ table.sort(containerHashAndName, function (a, b) return a[2] < b[2] end)
+ for _, c in ipairs(containerHashAndName) do
+  print(c[1], c[2])
+ end
+
  print("Containers found: " .. tableLength(containerHashAndName))
 end
 
@@ -54,6 +58,15 @@ function printContainer(col, row, percentage, name)
  gpu:setText(col, row, string.format("%-20s", name) .. string.format("%3s", percentage) .. "%")
 end
 
+function getContainerByHash(hash)
+ local containers = component.proxy(component.findComponent("stockyard"))
+ if not containers then error("Containers was nil") end
+ for _, cntr in pairs(containers) do
+  if (cntr.hash == hash) then return cntr end
+ end
+ error("getContainerByHash(): Hash not found.")
+end
+
 function updateOutput()
  clearScreen(gpu)
  gpu:setBackground(0, 0.5, 1.0, 0.5)
@@ -62,17 +75,16 @@ function updateOutput()
  gpu:setBackground(0,0,0,0)
  gpu:setForeground(1,1,1,1)
 
- local containers = component.proxy(component.findComponent("stockyard"))
- if not containers then error("Containers was nil") end
-
  local row = 1
  local col = 0
- for _, cntr in pairs(containers) do
-  --print ("Type: " .. cntr:getType().displayName)
+
+ for ndx, c in ipairs(containerHashAndName) do
+  local hash = c[1]
+  local name = c[2]
+  local cntr = getContainerByHash(hash)
   local invs = cntr:getInventories()[1]
   local count = 0
   local max = -1
-  local name = containerHashAndName[cntr.hash]
   local i = 0
 
   if(invs) then -- fluid buffers do not have an inventory
@@ -85,7 +97,7 @@ function updateOutput()
      max = t.max * invs.Size
      if (name == "Unused") then
       name = t.name
-      containerHashAndName[cntr.hash] = name
+      containerHashAndName[ndx] = {cntr.hash, name}
      end
     end
     i = i + 1
@@ -95,7 +107,7 @@ function updateOutput()
    max = cntr.maxFluidContent
    if (name == "Unused") then
     name = cntr:getFluidType().name
-    containerHashAndName[cntr.hash] = name
+    containerHashAndName[ndx] = {cntr.hash, name}
    end
   end
 
@@ -106,7 +118,7 @@ function updateOutput()
    row = 1
    col = 27
   end
- end
+ end --end for
 
  gpu:flush()
 end
@@ -116,7 +128,7 @@ local gpus = computer.getPCIDevices(findClass("GPUT1"))
 gpu = gpus[1]
 if not gpu then error("No GPU T1 found!") end
 
-local screen = component.proxy("5031F25C4A57F62291D2C1872B2CCA90")
+local screen = component.proxy("869FA076449431754754C7BF3F9700DE")
 if not screen then error("No screen") end
 
 gpu:bindScreen(screen)
@@ -128,7 +140,6 @@ local iconIndex = 5
 
 containerHashAndName = {}
 catalogContainers()
-local w,h = gpu:getSize()
 
 while true do
  if(iconIndex > 4) then 
@@ -137,7 +148,7 @@ while true do
  end 
  gpu:setBackground(0, 0.5, 1.0, 0.5)
  gpu:setForeground(0, 0, 0, 1)
- gpu:setText(w - 1, 0, icon[iconIndex])
+ gpu:setText(54, 0, icon[iconIndex])
  gpu:flush()
  iconIndex = iconIndex + 1
  event.pull(1)
