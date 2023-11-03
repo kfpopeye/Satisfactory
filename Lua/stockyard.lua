@@ -1,3 +1,9 @@
+-- -------------------------------------------------------------
+-- |                                                           |
+-- |   stockyard.lua                                           |
+-- |                                                           |
+-- -------------------------------------------------------------
+
 function catalogContainers()
  local containers = component.proxy(component.findComponent("stockyard"))
  if not containers then error("Containers was nil") end
