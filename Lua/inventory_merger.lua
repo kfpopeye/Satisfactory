@@ -1,13 +1,19 @@
-containerId = "113AA7C14E6BC53EB3A0E9B061E498A5"
+-- -------------------------------------------------------------
+-- |                                                           |
+-- |   inventory_merger.lua                                    |
+-- |                                                           |
+-- -------------------------------------------------------------
+
+print("--- Inventory Merger V1.0 ---")
+containerId = "ED0000D648D645233F3D4D8106A3EF20"
+panelID = "4D2529924B42632EF6129C9CE4D90182"
 groupName = "tickle" -- if all the codeable mergers are grouped, enter the group name inside the quotes otherwise
                      -- all codeable mergers will be used.
 itemMaxLimit = 0 -- setting this to greater than 0 will fill container with this many of each item, instead of filling partial stacks
 
 debug = false -- supresses debug comments
 
---If there is no console panel, uncomment these 2 lines below to make unit process passthrough ports only
---needsRefill = false
---itemsInTransit = 100
+passthruMode = false --If there is no console panel, setting this to true will make unit process passthrough ports only
 
 -- Important information
 -- 1. Merger names must follow the format "groupName part direction direction"
@@ -357,6 +363,12 @@ function processPassthruInputs()
 end
 
 function refillContainer()
+ if (passthruMode) then
+  print("Passthru mode not refilling.")
+  return
+ else
+  print("Refilling.")
+ end
  while needsRefill and not timedOut do
   needsRefill = false
   for intName, infoTable in pairs(slotsToRefill) do
@@ -395,14 +407,14 @@ end
 
 -- this is executed only if there is a console panel
 function waitForStart()
--- reset globals
+ -- reset globals
  mergerCount = 0
  itemsInTransit = 0
  lastTransferTime = computer.millis()
  timedOut = false
  needsRefill = true
  local waiting = true
- button:setColor(1,1,0)
+ button:setColor(1,1,0,1)
  print("Waiting for start......")
  infoScreen.text = "Waiting to start..."
 
@@ -410,7 +422,7 @@ function waitForStart()
   e, sender = event.pull(0)
   if (e == "Trigger" and sender == button) then
    waiting = false
-   button:setColor(0,1,0)
+   button:setColor(0,1,0,1)
    computer.beep()
   elseif (e == "ChangeState" and sender == lever) then
    if (lever.state) then
@@ -427,8 +439,10 @@ function waitForStart()
    computer.beep()
   end
  end
-
 end
+
+-- ***************** main chunk ********************
+print("Starting main chunk.")
 
 -- ***************** constants ********************
 direction = {left = 2, middle = 1, right = 0}
@@ -436,16 +450,22 @@ refillTimeOut = 5 * 60 * 1000 --5 min in ms
 
 -- ***************** globals ********************
 mergerCount = -1
-itemsInTransit = 0
 lastTransferTime = computer.millis()
 timedOut = false
-needsRefill = true
+if (passthruMode) then
+ needsRefill = false
+ itemsInTransit = 100
+else
+ needsRefill = true
+ itemsInTransit = 0
+end
 
 -- ***************** devices ********************
+print("Configuring devices.")
 hasScreen = false
-local screen = computer.getPCIDevices(findClass("FINComputerScreen"))[1]
+local screen = computer.getPCIDevices(classes.FINComputerScreen)[1]
 if not screen then print("No Screen found. Add a screen driver for improved information output.") end
-gpu = computer.getPCIDevices(findClass("GPUT1"))[1]
+gpu = computer.getPCIDevices(classes.GPUT1)[1]
 if not gpu then print("No GPU found. Add a graphical processing unit T1 for improved information output.") end
 if screen and gpu then
  gpu:bindScreen(screen)
@@ -459,20 +479,21 @@ if not container then error("No Container found!") end
 for _, connector in pairs(container:getFactoryConnectors()) do event.listen(connector) end
 --------------------------------
 hasPanel = false
-panel = component.proxy("75161C31488584453DCCA58A07B3276E")
+panel = component.proxy(panelID)
 if (panel) then
  hasPanel = true
  print("Found control panel")
  for _, module in pairs(panel:getModules()) do
-  if (module:getType().Name == "ModuleSwitch_C") then lever = module print("Found button") end
-  if (module:getType().Name == "ModuleButton") then button = module print("Found lever") end
-  if (module:getType().Name == "ModuleTextDisplay_C" and infoScreen) then
+  if (debug) then print(module:getType().Name) end
+  if (module:getType().Name == "ModuleSwitch") then lever = module print("Found lever") end
+  if (module:getType().Name == "ModuleButton") then button = module print("Found button") end
+  if (module:getType().Name == "ModuleTextDisplay" and infoScreen) then
    print("Found text screen 2")
    progScreen = module
    progScreen.Size = 25
    progScreen.Text = "Progress screen"
   end
-  if (module:getType().Name == "ModuleTextDisplay_C" and not infoScreen) then
+  if (module:getType().Name == "ModuleTextDisplay" and not infoScreen) then
    print("Found text screen 1")
    infoScreen = module
    infoScreen.size = 25
@@ -487,8 +508,9 @@ else
 end
 event.clear()
 
--- ***************** main ********************
+-- ***************** main loop ********************
 ::startMain::
+print("Starting loop.")
 if (hasPanel) then
  createInventoryList()
  printInventoryToScreen()
@@ -497,6 +519,7 @@ end
 
 --check if anything needs to be refilled
 slotsToRefill = createInventoryList()
+printInventoryToScreen()
 local count = tableLength(slotsToRefill)
 
 if (count == 0) then
@@ -510,7 +533,9 @@ else
  if (hasPanel) then infoScreen.text = "Refilling in progress." end
 end
 
+-- set passthru mode from console
 if (hasPanel and lever.state) then
+ passthuMode = true
  needsRefill = false
  itemsInTransit = 100
 end
@@ -530,8 +555,9 @@ if not status then
 end
 
 if (hasPanel) then infoScreen.text = "Refill complete.\nWaiting for transitting items." end
---continue passing parts through untill all parts have arrived or times out
-while itemsInTransit > 0 and not timedOut do
+ --continue passing parts through untill all parts have arrived or times out
+ print("Starting passthru mode.")
+ while itemsInTransit > 0 and not timedOut do
  processPassthruInputs()
  updateInfo()
  checkEvents()
@@ -543,7 +569,7 @@ end
 
 updateInfo()
 computer.beep()
-print ("Done")
+print("Done")
 
 if (hasPanel) then
  infoScreen.text = "Transitting complete.\nWaiting to start..."
