@@ -130,11 +130,11 @@ function updateOutput()
 end
 
 --main chunk
-local gpus = computer.getPCIDevices(findClass("GPUT1"))
+local gpus = computer.getPCIDevices(classes.GPUT1)
 gpu = gpus[1]
 if not gpu then error("No GPU T1 found!") end
 
-local screen = component.proxy("869FA076449431754754C7BF3F9700DE")
+local screen = component.proxy("89733EB7443F5D58BD3331A481AD3773")
 if not screen then error("No screen") end
 
 gpu:bindScreen(screen)
