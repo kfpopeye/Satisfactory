@@ -4,10 +4,30 @@
 -- |                                                           |
 -- -------------------------------------------------------------
 
-function catalogContainers()
- local containers = component.proxy(component.findComponent("stockyard"))
- if not containers then error("Containers was nil") end
+computer.log(1, "--- Stockyard Monitor V1.0 ---")
+groupName = "" -- if all the containers are grouped, enter the group name inside the quotes 
+                        -- otherwise all containers will be monitored.
 
+--Verbosity is 0 debug, 1 info, 2 warning, 3 error and 4 fatal
+function pdebug(msg) if (debug) then computer.log(0, msg) end end
+function pinfo(msg) computer.log(1, msg) end
+function pwarn(msg) computer.log(2, msg) end
+function perror(msg) computer.log(3, msg) error(msg)end
+function pfatal(msg) computer.log(4, msg) end
+
+function getContainers()
+ if (groupName == "") then
+  c = component.proxy(component.findComponent(classes.Build_StorageContainerMk2_C))
+ else
+  c = component.proxy(component.findComponent(groupName))
+ end
+ if not c then perror("Containers was nil") end
+ return c
+end
+
+function catalogContainers()
+ local containers = getContainers()
+ 
  for _, cntr in pairs(containers) do
   local invs = cntr:getInventories()[1]
   local name = "Unused"
@@ -24,10 +44,10 @@ function catalogContainers()
 
  table.sort(containerHashAndName, function (a, b) return a[2] < b[2] end)
  for _, c in ipairs(containerHashAndName) do
-  print(c[1], c[2])
+  pinfo(c[1], c[2])
  end
 
- print("Containers found: " .. tableLength(containerHashAndName))
+ pinfo("Containers found: " .. tableLength(containerHashAndName))
 end
 
 function clearScreen(g)
@@ -51,35 +71,53 @@ function tableContains (T, h)
 end
 
 function printContainer(col, row, percentage, name)
- gpu:setForeground(1,1,1,1)
- if not (name == "Unused") then
-  if (percentage < 50) then
-   gpu:setForeground(1,0,0,1)
-  elseif (percentage < 75) then
-   gpu:setForeground(1,1,0,1)
+ if(hasScreen) then
+  gpu:setForeground(1,1,1,1)
+  if not (name == "Unused") then
+   if (percentage < 50) then
+    gpu:setForeground(1,0,0,1)
+   elseif (percentage < 75) then
+    gpu:setForeground(1,1,0,1)
+   end
+  else
+   gpu:setForeground(0.25,0.25,0.25,1)
   end
+  gpu:setText(col, row, string.format("%-20s", name) .. string.format("%3s", percentage) .. "%")
  else
-  gpu:setForeground(0.25,0.25,0.25,1)
+  if not (name == "Unused") then
+    if (percentage < 50) then
+     pwarn(string.format("%-20s", name) .. string.format("%3s", percentage) .. "% !!!!!!")
+    elseif (percentage < 75) then
+     pwarn(string.format("%-20s", name) .. string.format("%3s", percentage) .. "%")
+    else
+     pinfo(string.format("%-20s", name) .. string.format("%3s", percentage) .. "%")
+    end
+  else
+   pinfo(string.format("%-20s", name) .. string.format("%3s", percentage) .. "%")
+  end  
  end
- gpu:setText(col, row, string.format("%-20s", name) .. string.format("%3s", percentage) .. "%")
 end
 
 function getContainerByHash(hash)
- local containers = component.proxy(component.findComponent("stockyard"))
- if not containers then error("Containers was nil") end
+ local containers = getContainers()
+ if not containers then perror("Containers was nil") end
  for _, cntr in pairs(containers) do
   if (cntr.hash == hash) then return cntr end
  end
- error("getContainerByHash(): Hash not found.")
+ perror("getContainerByHash(): Hash not found.")
 end
 
 function updateOutput()
- clearScreen(gpu)
- gpu:setBackground(0, 0.5, 1.0, 0.5)
- gpu:setForeground(0, 0, 0, 1)
- gpu:setText(0, 0, string.format("%-54s", "Stockyard Inventory")) --55 chars (padded with spaces after)
- gpu:setBackground(0,0,0,0)
- gpu:setForeground(1,1,1,1)
+ if(hasScreen) then
+  clearScreen(gpu)
+  gpu:setBackground(0, 0.5, 1.0, 0.5)
+  gpu:setForeground(0, 0, 0, 1)
+  gpu:setText(0, 0, string.format("%-54s", "Stockyard Inventory")) --55 chars (padded with spaces after)
+  gpu:setBackground(0,0,0,0)
+  gpu:setForeground(1,1,1,1)
+ else
+  pinfo("-----------------------------------------------------------------------")
+ end
 
  local row = 1
  local col = 0
@@ -126,20 +164,25 @@ function updateOutput()
   end
  end --end for
 
- gpu:flush()
+ if (hasScreen) then gpu:flush() end
 end
+
+hasScreen = true
 
 --main chunk
 local gpus = computer.getPCIDevices(classes.GPUT1)
 gpu = gpus[1]
-if not gpu then error("No GPU T1 found!") end
+if not gpu then
+ warn("No GPU T1 found! Add one for increased functionality.")
+ hasScreen = false
+else
+ local screen = component.proxy("89733EB7443F5D58BD3331A481AD3773")
+ if not screen then error("No screen") end
 
-local screen = component.proxy("89733EB7443F5D58BD3331A481AD3773")
-if not screen then error("No screen") end
-
-gpu:bindScreen(screen)
-gpu:setSize(55, 12)
-clearScreen(gpu)
+ gpu:bindScreen(screen)
+ gpu:setSize(55, 12)
+ clearScreen(gpu)
+end
 
 local icon = {"|", "/", "-", "\\"}
 local iconIndex = 5
@@ -151,11 +194,13 @@ while true do
  if(iconIndex > 4) then 
   updateOutput()
   iconIndex = 1 
- end 
- gpu:setBackground(0, 0.5, 1.0, 0.5)
- gpu:setForeground(0, 0, 0, 1)
- gpu:setText(54, 0, icon[iconIndex])
- gpu:flush()
+ end
+ if (hasScreen) then
+  gpu:setBackground(0, 0.5, 1.0, 0.5)
+  gpu:setForeground(0, 0, 0, 1)
+  gpu:setText(54, 0, icon[iconIndex])
+  gpu:flush()
+ end
  iconIndex = iconIndex + 1
  event.pull(1)
 end
