@@ -18,6 +18,12 @@ function pfatal(msg) computer.log(4, msg) end
 function getContainers()
  if (groupName == "") then
   c = component.proxy(component.findComponent(classes.Build_StorageContainerMk2_C))
+  local t = component.proxy(component.findComponent(classes.Build_IndustrialTank_C))
+  if (t) then
+    for _, value in ipairs(t) do
+     table.insert(c, value)
+    end
+  end
  else
   c = component.proxy(component.findComponent(groupName))
  end
@@ -43,10 +49,6 @@ function catalogContainers()
  end
 
  table.sort(containerHashAndName, function (a, b) return a[2] < b[2] end)
- for _, c in ipairs(containerHashAndName) do
-  pinfo(c[1], c[2])
- end
-
  pinfo("Containers found: " .. tableLength(containerHashAndName))
 end
 
@@ -84,17 +86,20 @@ function printContainer(col, row, percentage, name)
   end
   gpu:setText(col, row, string.format("%-20s", name) .. string.format("%3s", percentage) .. "%")
  else
-  if not (name == "Unused") then
-    if (percentage < 50) then
-     pwarn(string.format("%-20s", name) .. string.format("%3s", percentage) .. "% !!!!!!")
-    elseif (percentage < 75) then
-     pwarn(string.format("%-20s", name) .. string.format("%3s", percentage) .. "%")
-    else
-     pinfo(string.format("%-20s", name) .. string.format("%3s", percentage) .. "%")
-    end
-  else
-   pinfo(string.format("%-20s", name) .. string.format("%3s", percentage) .. "%")
-  end  
+  if (percentage) then --nil is used to signal print out of final message
+   if (message == nil) then message = "" end
+   if (percentage < 50) then
+    message = message .. (string.format("%-20s", name) .. string.format("%3s", percentage) .. "%** ")
+   elseif (percentage < 75) then
+    message = message .. (string.format("%-20s", name) .. string.format("%3s", percentage) .. "%*  ")
+   else
+    message = message .. (string.format("%-20s", name) .. string.format("%3s", percentage) .. "%   ")
+   end
+  end
+  if (col == 2) then
+   pinfo(message)
+   message = nil
+  end
  end
 end
 
@@ -157,14 +162,23 @@ function updateOutput()
 
   percentage = math.floor(count / max * 100)
   printContainer(col, row, percentage, name)
-  row = row + 1
-  if (row == 12) then
-   row = 1
-   col = 27
+  if (hasScreen) then
+   row = row + 1
+   if (row == 12) then
+    row = 1
+    col = 27
+   end
+  else
+   col = col + 1
+   if (col == 3) then col = 0 end
   end
  end --end for
 
- if (hasScreen) then gpu:flush() end
+ if (hasScreen) then
+  gpu:flush()
+ else
+  printContainer(2, row, nil, nil)
+ end
 end
 
 hasScreen = true
@@ -200,6 +214,8 @@ while true do
   gpu:setForeground(0, 0, 0, 1)
   gpu:setText(54, 0, icon[iconIndex])
   gpu:flush()
+ else
+  computer.stop()
  end
  iconIndex = iconIndex + 1
  event.pull(1)
