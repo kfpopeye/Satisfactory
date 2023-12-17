@@ -74,15 +74,29 @@ end
 function updatePanelInfo()
  -- text displays are 30 char wide
  if (not hasPanel) then return end
+ 
+ local iLeft = 0
+ for _, infoTable in pairs(slotsToRefill) do
+  iLeft = iLeft + (infoTable["max"] - infoTable["count"])
+ end
 
  local t = convertToTime(refillTimeOut - (computer.millis() - lastTransferTime))
- progScreen.text = "Time out in: " .. t .. "\nItems transitting: " .. itemsInTransit .. "\nTypes transitting: " .. tableLength(slotsToRefill)
+ progScreen.text = "Time out in: " .. t .. 
+                   "\nItems transitting: " .. itemsInTransit .. 
+                   "\nTypes transitting: " .. tableLength(slotsToRefill) .. 
+                   "\nItems left: " .. iLeft - itemsInTransit
 
  if (itemsInTransit == 0 and not needsRefill) then 
   progScreen.text = "**** COMPLETE ****"
  end
- if (timedOut) then 
-  progScreen.text = "**** TIMED OUT ****"
+ if (timedOut) then
+  local n = ""
+  for _, infoTable in pairs(slotsToRefill) do
+   if(not infoTable["mrgrId"]) then
+    n = n .. infoTable["name"] .. ", "
+   end  
+  end
+  progScreen.text = "**** TIMED OUT ****\nMissing " .. string.sub(n, 1, -3)
  end
 end
 
@@ -278,7 +292,7 @@ function getMergers()
  local mergers = nil
 
  if (groupName == "") then
-  mergers = component.proxy(component.findComponent(findClass("CodeableMerger")))
+  mergers = component.proxy(component.findComponent(classes.CodeableMerger_C))
  else
   mergers = component.proxy(component.findComponent(groupName))
  end
@@ -419,8 +433,8 @@ function waitForStart()
  needsRefill = true
  local waiting = true
  button:setColor(1,1,0,1)
- pinfo("Waiting for start......")
- infoScreen.text = "Waiting to start..."
+ pinfo("Push button to start refilling.")
+ infoScreen.text = "Push button to start refilling."
 
  while (waiting) do
   e, sender = event.pull(0)
@@ -431,12 +445,12 @@ function waitForStart()
   elseif (e == "ChangeState" and sender == lever) then
    if (lever.state) then
     pinfo("Setting pass thru mode on")
-    infoScreen.text = "Setting pass thru mode on.\nPush button to start..."
+    infoScreen.text = "Setting pass thru mode on.\nPush button to start."
     needsRefill = false
     itemsInTransit = 100
    else
     pinfo("Setting pass thru mode off")
-    infoScreen.text = "Setting pass thru mode off.\nWaiting to start..."
+    infoScreen.text = "Setting pass thru mode off.\nPush button to start refilling."
     needsRefill = true
     itemsInTransit = 0
    end
@@ -540,7 +554,7 @@ end
 
 -- set passthru mode from console
 if (hasPanel and lever.state) then
- passthuMode = true
+ passthruMode = true
  needsRefill = false
  itemsInTransit = 100
 end
@@ -551,7 +565,7 @@ if not status then
  computer.log(4, err)
  computer.beep()
  if (hasPanel) then
-  button:setColor(1,0,0)
+  button:setColor(1,0,0, 1)
   progScreen.Size = 50
   progScreen.Text = "ERROR"
   infoScreen.Text = "An error has occured.\nRefer to the console for more details."
@@ -569,10 +583,21 @@ if (hasPanel) then infoScreen.text = "Refill complete.\nWaiting for transitting 
  if(computer.millis() - lastTransferTime > refillTimeOut) then
   timedOut = true
   pinfo("Timed out")
+  local n = ""
+  for _, infoTable in pairs(slotsToRefill) do
+   if(not infoTable["mrgrId"]) then
+    n = n .. infoTable["name"] .. ", "
+   end  
+  end
+  pinfo("Missing " .. string.sub(n, 1, -3))
  end
 end
 
 updateInfo()
+if(passthruMode) then
+ passthruMode = false
+ lever.state = false
+end
 computer.beep()
 pinfo("Done")
 
