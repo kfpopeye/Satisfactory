@@ -1,3 +1,16 @@
+-- -------------------------------------------------------------
+-- |                                                           |
+-- |   light.lua                                               |
+-- |                                                           |
+-- -------------------------------------------------------------
+
+--Verbosity is 0 debug, 1 info, 2 warning, 3 error and 4 fatal
+function pdebug(msg) if (debug) then computer.log(0, msg) end end
+function pinfo(msg) computer.log(1, msg) end
+function pwarn(msg) computer.log(2, msg) end
+function perror(msg) computer.log(3, msg) error(msg) end
+function pfatal(msg) computer.log(4, msg) end
+
 function clearScreen(g)
  local w,h = g:getSize()
  g:setBackground(0, 0, 0, 0)
@@ -15,6 +28,27 @@ function convertToTime(ms)
 end
 
 function updateScreen()
+ if (hasScreen) then
+  updateScreenTab()
+ else
+  logInfo()
+ end
+end
+
+function logInfo()
+ pinfo("------------Energy Production this session----------------")
+ pinfo("Total session time: " .. convertToTime(computer.millis()))
+ pinfo("Maximum power produced: " .. string.format("%.2f", productionMax))
+ pinfo("Minimum power produced: " .. string.format("%.2f", productionMin))
+ if (circuit.hasBatteries) then
+  pinfo("Maximum battery capacity: " .. string.format("%.2f", circuit.batteryCapacity))
+  pinfo("Current battery storage: " .. string.format("%.2f", circuit.batteryStore))
+ else
+  pinfo("No batteries detected.")
+ end
+end
+
+function updateScreenTab()
  clearScreen(gpu)
  gpu:setBackground(0, 0, 0, 0)
  gpu:setForeground(1, 1, 1, 1)
@@ -51,20 +85,26 @@ function main()
   if (circuit.production < productionMin) then productionMin = circuit.production end
   updateScreen()
 
-  print(computer.millis(), circuit.batteryStorePercent * 100, "%")
+  pinfo(computer.millis() .. circuit.batteryStorePercent * 100 .. "%")
  end
 end
 
 --main chunk
-local tabScreen = computer.getPCIDevices(findClass("FINComputerScreen"))[1]
-if not tabScreen then error("No Screen tab found!") end
-gpu = computer.getPCIDevices(findClass("GPUT1"))[1]
-if not gpu then error("No GPU T1 found!") end
-gpu:bindScreen(tabScreen)
-gpu:setSize(120, 50)
+hasScreen = false
+local tabScreen = computer.getPCIDevices(classes.FINComputerScreen)[1] 
+if not tabScreen then pwarn("No Screen tab found!") end
+gpu = computer.getPCIDevices(classes.GPUT1)[1]
+if not gpu then pwarn("No GPU T1 found!") end
 
-light = component.proxy("ED45EBA041045EB6E9909A8E10FA4904")
-if not light then error("No light found!") end
+if(tabScreen and gpu) then
+ gpu:bindScreen(tabScreen)
+ gpu:setSize(120, 50)
+ pinfo("Found screen tab and GPU")
+ hasScreen = true
+end
+
+light = component.proxy("9DC8C5AE4A09E050C5297989675B9A92")
+if not light then perror("No light found!") end
 light.colorSlot = 0 --white
 
 circuit = light:getPowerConnectors()[1]:getCircuit()
