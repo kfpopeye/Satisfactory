@@ -1,6 +1,6 @@
 -- -------------------------------------------------------------
 -- |                                                           |
--- |   Hub atmoic report.lua                                   |
+-- |   Hub atomic report.lua                                   |
 -- |                                                           |
 -- -------------------------------------------------------------
 
@@ -33,7 +33,7 @@ function convertToTime(ms)
  return string.format("%02d:%02d:%02d.%01d", hh, mm, ss, t)
 end
 
-function updateData(data, ctable, ftable)
+function updateData(data, ctable, ftable, rtable)
  local d1, d2, d3, d4, d5, d6, d7 = table.unpack(data)
   if d1 == "container" then
    ctable[d2] = d3
@@ -43,10 +43,16 @@ function updateData(data, ctable, ftable)
    fdata["inputs"] = d4
    if(d5) then fdata["productivity"] = d5 else fdata["productivity"] = "--" end   
    ftable[d2] = fdata
+  elseif d1 == "reactor" then
+   local fdata = {}
+   fdata["outputs"] = d3
+   fdata["inputs"] = d4
+   if(d5) then fdata["productivity"] = d5 else fdata["productivity"] = "--" end   
+   rtable[d2] = fdata
   end
 end
 
-function updateScreen(g, cont, fact, name)
+function updateScreen(g, cont, fact, react, name)
  clearScreen(g)
  local row = 0
  local col = 0
@@ -70,6 +76,7 @@ function updateScreen(g, cont, fact, name)
  end
  table.sort(list)
 
+ -- factories
  for _, n in ipairs(list) do
   local prod = "(" .. fact[n]["productivity"] .. "%) "
   g:setText(col + 1, row, n .. prod .. fact[n]["outputs"])
@@ -79,7 +86,33 @@ function updateScreen(g, cont, fact, name)
   g:setText(col + 1, row, indent .. fact[n]["inputs"])
   row = row + 1
  end
-
+ 
+ row = row + 1
+ g:setBackground(0, 0.5, 1.0, 0.5)
+ g:setForeground(0, 0, 0, 1)
+ g:setText(col, row, string.format("%-54s", "Reactor Status")) --55 chars (padded with spaces after)
+ g:setBackground(0,0,0,0)
+ g:setForeground(1,1,1,1)
+ row = row + 1
+  
+ --reactors
+ for m, n in pairs(react) do
+  local prod = "(" .. n["productivity"] .. "%) "
+  if (n["productivity"] < 50) then
+    g:setForeground(1,0,0,1)
+  elseif (n["productivity"] < 75) then
+    g:setForeground(1,1,0,1)
+  end
+  g:setText(col + 1, row, m .. prod .. n["outputs"])
+  row = row + 1
+  local indent = " "
+  while (indent:len() < (m:len() + prod:len())) do indent = indent .. " " end
+  g:setText(col + 1, row, indent .. n["inputs"])
+  g:setForeground(1,1,1,1)
+  row = row + 1
+ end
+ 
+ --containers
  row = row + 1
  g:setBackground(0, 0.5, 1.0, 0.5)
  g:setForeground(0, 0, 0, 1)
@@ -105,53 +138,29 @@ function updateScreen(g, cont, fact, name)
 end
 
 --main chunk
-local gpus = computer.getPCIDevices(findClass("GPUT1"))
+local gpus = computer.getPCIDevices(classes.GPUT1)
 gpu = gpus[1]
-gpu2 = gpus[2]
-gpu3 = gpus[3]
 if not gpu then error("No GPU T1 found!") end
-if not gpu2 then error("Not enough GPU T1 found!") end
-if not gpu3 then error("Noot enough GPU T1 found!") end
 
-local screen = component.proxy("4F8274834B39B22D65249A94EFE1FDC3")
+local screen = component.proxy("692B7B7F4400A3996908FFA1A3204A9C")
 if not screen then error("No screen1") end
 
 gpu:bindScreen(screen)
 gpu:setSize(60, 35)
 clearScreen(gpu)
 
-local screen1 = component.proxy("EF91DFE946A42BC390D557B6D11E7915")
-if not screen1 then error("No screen2") end
-
-gpu2:bindScreen(screen1)
-gpu2:setSize(60, 35)
-clearScreen(gpu2)
-
-local screen2 = component.proxy("794298474FB98875C93B8A82D2A621D8")
-if not screen2 then error("No screen3") end
-
-gpu3:bindScreen(screen2)
-gpu3:setSize(60, 35)
-clearScreen(gpu3)
-
-local net = computer.getPCIDevices(findClass("NetworkCard"))[1]
+local net = computer.getPCIDevices(classes.NetworkCard)[1]
 if not net then error("No network card") end
 
 event.ignoreAll()
 event.clear()
 event.listen(net)
-net:open(42)
-net:open(43)
-net:open(44)
-
+net:open(45)
 print("Opened ports")
 
-containersPort42 = {}
-factoriesPort42 = {}
-containersPort43 = {}
-factoriesPort43 = {}
-containersPort44 = {}
-factoriesPort44 = {}
+containersPort45 = {}
+factoriesPort45 = {}
+reactorsPort45 = {}
 
 while true do
  local data = {event.pull()}
@@ -161,15 +170,7 @@ while true do
 
  if e == "NetworkMessage" then
   print("Updating data from port: " .. port)
-  if (port == 42) then
-   updateData(data, containersPort42, factoriesPort42)
-   updateScreen(gpu, containersPort42, factoriesPort42, "Atomic Bay")
-  elseif (port == 43) then
-   updateData(data, containersPort43, factoriesPort43)
-   updateScreen(gpu2 , containersPort43, factoriesPort43, "Atomic Cave")
-  elseif (port == 44) then
-   updateData(data, containersPort44, factoriesPort44)
-   updateScreen(gpu3, containersPort44, factoriesPort44, "Atomic Waterfall")
-  end
+  updateData(data, containersPort45, factoriesPort45, reactorsPort45)
+  updateScreen(gpu, containersPort45, factoriesPort45, reactorsPort45, "Atomic Alcove")
  end
 end
