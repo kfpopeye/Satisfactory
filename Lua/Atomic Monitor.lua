@@ -69,17 +69,22 @@ function displayContainers()
   local max = -1
   local name = cntr.nick:sub(9)
   local i = 0
-
-  while (i < invs.Size) do
-   local t = nil
-   local stack = invs:getStack(i)
-   if (stack.item) then t = stack.item.type end
-   if(t) then
-    count = count + stack.count
-    max = t.max * invs.Size
-   end
-   i = i + 1
-  end --while
+  
+  if (invs) then
+   while (i < invs.Size) do
+    local t = nil
+    local stack = invs:getStack(i)
+    if (stack.item) then t = stack.item.type end
+    if(t) then
+     count = count + stack.count
+     max = t.max * invs.Size
+    end
+    i = i + 1
+   end --while
+  else
+   count = cntr.fluidContent
+   max = cntr.maxFluidContent
+  end --if
 
   if (row > 25 and col == 1) then
    col = 30
@@ -128,7 +133,7 @@ function displayFactories()
    local indent = " "
    while (indent:len() < (name:len() + tostring(prod):len() + 4)) do indent = indent .. " " end
    gpu:setText(1, row, indent .. data_input)
-   net:broadcast(port, "factory", name, data_output, data_input, prod)
+   net:broadcast(port, "reactor", name, data_output, data_input, prod)
 
   else
 
@@ -193,7 +198,7 @@ function displayFactories()
    --print("        " .. data_input)
 
    -- outputs factory summaries to screen and network
-   local name = fctry.nick:sub(siteNick:len() + 2) --removes "ATOMICBAY "
+   local name = fctry.nick:sub(siteNick:len() + 2) --removes sitenick ie."ATOMICBAY "
    local productivity = makePercentage(fctry.productivity)
    gpu:setText(1, row, (name .. " (" .. productivity .. "%)" .. data_output))
    row = row + 1
@@ -206,21 +211,22 @@ function displayFactories()
 end
 
 --main chunk
-local gpus = computer.getPCIDevices(findClass("GPUT1"))
+local gpus = computer.getPCIDevices(classes.GPUT1)
 gpu = gpus[1]
 if not gpu then error("No GPU T1 found!") end
 
-local screen = component.proxy("D7EBEEC6426C054B81264CA836E56FCC")
+local screen = component.proxy("E9EC01844A238ACAB38F4AB3D671F7F8")
 if not screen then error("No screen") end
 
-net = computer.getPCIDevices(findClass("NetworkCard"))[1]
+net = computer.getPCIDevices(classes.NetworkCard)[1]
 if not net then error("No network card") end
 
 -- ATOMICBAY 42
 -- ATOMICAVE 43
 -- ATOMICWATERFALL 44
-port = 43
-siteNick = "ATOMICCAVE"
+-- ATOMICALCOVE 45
+port = 45
+siteNick = "ATOMICALCOVE"
 
 gpu:bindScreen(screen)
 gpu:setSize(65, 27)
