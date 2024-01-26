@@ -79,11 +79,17 @@ function updateScreen(g, cont, fact, react, name)
  -- factories
  for _, n in ipairs(list) do
   local prod = "(" .. fact[n]["productivity"] .. "%) "
+  if (fact[n]["productivity"] < 50) then
+    g:setForeground(1,0,0,1)
+  elseif (fact[n]["productivity"] < 75) then
+    g:setForeground(1,1,0,1)
+  end
   g:setText(col + 1, row, n .. prod .. fact[n]["outputs"])
   row = row + 1
   local indent = " "
   while (indent:len() < (n:len() + prod:len())) do indent = indent .. " " end
   g:setText(col + 1, row, indent .. fact[n]["inputs"])
+  g:setForeground(1,1,1,1)
   row = row + 1
  end
  
