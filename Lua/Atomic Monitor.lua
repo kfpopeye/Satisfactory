@@ -92,8 +92,9 @@ function displayContainers()
    count = cntr.fluidContent
    max = cntr.maxFluidContent
   end --if
-
-  if (row > 25 and col == 1) then
+  
+  local _, h = gpu:getSize()
+  if (row > h-2 and col == 1) then
    col = 30
    row = topRow
   end
