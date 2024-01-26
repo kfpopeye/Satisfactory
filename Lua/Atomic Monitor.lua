@@ -1,3 +1,9 @@
+-- -------------------------------------------------------------
+-- |                                                           |
+-- |   Atomic Monitor.lua                                      |
+-- |                                                           |
+-- -------------------------------------------------------------
+
 -- IF the string is more than 1 word (contains spaces) and greater than 5 characters
 -- this will remove all lowercase letters, remove all dashes and convert spaces to periods
 function createAbbrev(s)
@@ -56,11 +62,12 @@ function displayContainers()
 
  gpu:setBackground(0, 0.5, 1.0, 0.5)
  gpu:setForeground(0, 0, 0, 1)
- gpu:setText(0, 21, string.format("%-64s", "Container Inventory")) --65 chars (padded with spaces after)
+ gpu:setText(0, row, string.format("%-64s", "Container Inventory")) --65 chars (padded with spaces after)
  gpu:setBackground(0,0,0,0)
  gpu:setForeground(1,1,1,1)
 
- local row = 22
+ row = row + 1
+ local topRow = row
  local col = 1
  for _, cntr in pairs(containers) do
   --print ("Type: " .. cntr:getType().displayName)
@@ -88,7 +95,7 @@ function displayContainers()
 
   if (row > 25 and col == 1) then
    col = 30
-   row = 22
+   row = topRow
   end
 
   local percentage = makePercentage(count / max)
@@ -101,7 +108,7 @@ end
 function displayFactories()
  gpu:setBackground(0, 0.5, 1.0, 0.5)
  gpu:setForeground(0, 0, 0, 1)
- gpu:setText(0, 0, string.format("%-64s", "Factories Output\\Input Status")) --65 chars (padded with spaces after)
+ gpu:setText(0, row, string.format("%-64s", "Factories Output\\Input Status")) --65 chars (padded with spaces after)
  gpu:setBackground(0,0,0,0)
  gpu:setForeground(1,1,1,1)
 
@@ -109,43 +116,21 @@ function displayFactories()
  if not factories then error("Factories was nil") end
  print("Number of factories: " .. tableLength(factories))
 
- local row = 0
  local invsSize = 0
  for _, fctry in pairs(factories) do
   local data_output = " OUT> "
   local data_input = " IN> "
-  row = row + 1
   local invs
 
   if (fctry:getType().Name == "Build_GeneratorNuclear_C") then
-
-   local n = fctry:getInventories()[1] -- 1 output inventory (waste)
-   data_output = data_output .. "Nuclear Waste: " .. n.itemCount .. " "
-   n = fctry:getInventories()[2] -- 2 fuel inventory (water)
-   data_input = data_input .. "Water: " .. makePercentage(n.itemCount/50000) .. "% "
-   n = fctry:getInventories()[3] -- 3 inventory potential (rods)
-   data_input = data_input .. "Rods :" .. n.itemCount
-  
-   local name = fctry.nick:sub(siteNick:len() + 2) --removes "ATOMICBAY "
-   local prod = makePercentage(fctry.productivity)
-   gpu:setText(1, row, (name .. " (" .. prod .. "%)" .. data_output))
-   row = row + 1
-   local indent = " "
-   while (indent:len() < (name:len() + tostring(prod):len() + 4)) do indent = indent .. " " end
-   gpu:setText(1, row, indent .. data_input)
-   net:broadcast(port, "reactor", name, data_output, data_input, prod)
-
   else
-
+   row = row + 1
    local rec = fctry:getRecipe()
-   --print(fctry:getType().Name .. " Nick:" .. fctry.nick .. " Recipe:" .. rec.name  .. " Prod:" .. makePercentage(fctry.productivity) .. "%")
    invs = fctry:getOutputInv()
    invsSize = invs.Size - 1 -- Satisfactory reports back incorrect number HACK
 
    -- summarizes output products
    local rec_prod = rec:getProducts()
-   --print("    Outputs: " .. invsSize)
-   --print("        Number of products: " .. tableLength(rec_prod))
    local prodTable = {}
    for _, prodType in pairs(rec_prod) do
     local n = createAbbrev(prodType.Type.Name)
@@ -167,14 +152,11 @@ function displayFactories()
    end --while
 
    for name, amnt in pairs(prodTable) do data_output = data_output .. name .. ":" .. amnt .. " " end
-   --print("        " .. data_output)
 
    -- summarizes input ingredients
    invs = fctry:getInputInv()
    invsSize = invs.Size
-   --print("    Number of inputs: " .. invsSize)
    local rec_ingred = rec:getIngredients()
-   --print("    Number of ingrediants: " .. tableLength(rec_ingred))
    local ingredTable = {}
    for _, ingredType in pairs(rec_ingred) do
     local n = createAbbrev(ingredType.Type.Name)
@@ -195,17 +177,69 @@ function displayFactories()
    end --while
 
    for name, amnt in pairs(ingredTable) do data_input = data_input .. name .. ":" .. amnt .. " " end
-   --print("        " .. data_input)
 
    -- outputs factory summaries to screen and network
    local name = fctry.nick:sub(siteNick:len() + 2) --removes sitenick ie."ATOMICBAY "
    local productivity = makePercentage(fctry.productivity)
+   if (fctry.productivity < .50) then
+    gpu:setForeground(1,0,0,1)
+   elseif (fctry.productivity < .75) then
+    gpu:setForeground(1,1,0,1)
+   end
    gpu:setText(1, row, (name .. " (" .. productivity .. "%)" .. data_output))
+   gpu:setForeground(1,1,1,1)
    row = row + 1
    local indent = " "
    while (indent:len() < (name:len() + tostring(productivity):len() + 4)) do indent = indent .. " " end
    gpu:setText(1, row, (indent .. data_input))
    net:broadcast(port, "factory", name, data_output, data_input, productivity)
+  end --if not nuclear plant
+ end --for
+end
+
+function displayReactors()
+ row = row + 1
+ gpu:setBackground(0, 0.5, 1.0, 0.5)
+ gpu:setForeground(0, 0, 0, 1)
+ gpu:setText(0, row, string.format("%-64s", "Reactor Output\\Input Status")) --65 chars (padded with spaces after)
+ gpu:setBackground(0,0,0,0)
+ gpu:setForeground(1,1,1,1)
+
+ local factories = component.proxy(component.findComponent(siteNick))
+ if not factories then error("Factories was nil") end
+ 
+ row = row + 1
+ local invsSize = 0
+ for _, fctry in pairs(factories) do
+  local data_output = " OUT> "
+  local data_input = " IN> "
+  local invs
+
+  if (fctry:getType().Name == "Build_GeneratorNuclear_C") then
+
+   local n = fctry:getInventories()[1] -- 1 output inventory (waste)
+   data_output = data_output .. "Nuclear Waste: " .. n.itemCount .. " "
+   n = fctry:getInventories()[2] -- 2 fuel inventory (water)
+   data_input = data_input .. "Water: " .. makePercentage(n.itemCount/50000) .. "% "
+   n = fctry:getInventories()[3] -- 3 inventory potential (rods)
+   data_input = data_input .. "Rods :" .. n.itemCount
+  
+   local name = fctry.nick:sub(siteNick:len() + 2) --removes site nickname plus space
+   local prod = makePercentage(fctry.productivity)
+   if (fctry.productivity < .50) then
+    gpu:setForeground(1,0,0,1)
+   elseif (fctry.productivity < .75) then
+    gpu:setForeground(1,1,0,1)
+   end
+   gpu:setText(1, row, (name .. " (" .. prod .. "%)" .. data_output))
+   row = row + 1
+   local indent = " "
+   while (indent:len() < (name:len() + tostring(prod):len() + 4)) do indent = indent .. " " end
+   gpu:setText(1, row, indent .. data_input)
+   gpu:setForeground(1,1,1,1)
+   row = row + 1
+   net:broadcast(port, "reactor", name, data_output, data_input, prod)
+
   end --if nuclear plant
  end --for
 end
@@ -232,10 +266,18 @@ gpu:bindScreen(screen)
 gpu:setSize(65, 27)
 
 while true do
+ row = 0
  clearScreen(gpu)
  displayFactories()
+ displayReactors()
  displayContainers()
- gpu:setText(0, 26, "Run time: " .. convertToTime(computer.millis()))
+ local _, h = gpu:getSize()
+ if (row > h) then
+  gpu:setForeground(1,0,0,1)
+  row = h - 2
+ end
+ gpu:setText(0, row, "Run time: " .. convertToTime(computer.millis()))
+ gpu:setForeground(1,1,1,1)
  gpu:flush()
  event.pull(5)
 end
