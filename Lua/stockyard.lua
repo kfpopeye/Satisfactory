@@ -12,12 +12,12 @@ groupName = "" -- if all the containers are grouped, enter the group name inside
 function pdebug(msg) if (debug) then computer.log(0, msg) end end
 function pinfo(msg) computer.log(1, msg) end
 function pwarn(msg) computer.log(2, msg) end
-function perror(msg) computer.log(3, msg) error(msg)end
+function perror(msg) computer.log(3, msg) computer.beep() error(msg)end
 function pfatal(msg) computer.log(4, msg) end
 
 function getContainers()
  if (groupName == "") then
-  c = component.proxy(component.findComponent(classes.Build_StorageContainerMk2_C))
+  c = component.proxy(component.findComponent(classes.FGBuildableStorage))
   local t = component.proxy(component.findComponent(classes.Build_IndustrialTank_C))
   if (t) then
     for _, value in ipairs(t) do
@@ -37,13 +37,19 @@ function catalogContainers()
  for _, cntr in pairs(containers) do
   local invs = cntr:getInventories()[1]
   local name = "Unused"
+  local nick = ""
+  if (groupName == "") then
+   nick = cntr.nick
+  else
+   nick = string.gsub(cntr.nick, groupName, "")
+  end
   if(invs) then -- fluid buffers do not have an inventory
    local t = nil
    local stack = invs:getStack(0)
    if (stack and stack.item) then t = stack.item.type end
-   if(t) then name = t.name end
+   if(t) then name = t.name .. nick end
   else
-   name = cntr:getFluidType().name
+   name = cntr:getFluidType().name .. nick
   end
   table.insert(containerHashAndName, {cntr.hash, name})
  end
@@ -109,7 +115,8 @@ function getContainerByHash(hash)
  for _, cntr in pairs(containers) do
   if (cntr.hash == hash) then return cntr end
  end
- perror("getContainerByHash(): Hash not found.")
+ computer.log(3, "getContainerByHash(): Hash not found.")
+ computer.reset()
 end
 
 function updateOutput()
@@ -145,7 +152,7 @@ function updateOutput()
      count = count + stack.count
      max = t.max * invs.Size
      if (name == "Unused") then
-      name = t.name
+      name = t.name .. string.gsub(cntr.nick, groupName, "")
       containerHashAndName[ndx] = {cntr.hash, name}
      end
     end
@@ -190,7 +197,7 @@ if not gpu then
  warn("No GPU T1 found! Add one for increased functionality.")
  hasScreen = false
 else
- local screen = component.proxy("89733EB7443F5D58BD3331A481AD3773")
+ local screen = component.proxy("3426D01E46D6C3A9AB9361B0E7E1D005")
  if not screen then error("No screen") end
 
  gpu:bindScreen(screen)
