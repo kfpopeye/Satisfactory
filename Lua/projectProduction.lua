@@ -66,30 +66,30 @@ end
 function loop()
  while true do
   -- assembler
-  local device = component.proxy("0A6C31324A7C46DDA492208DA283E78A")
+  local device = component.proxy("4BB958094F2D14197F0EFEB282C73CCC")
   if device then displayManufacturer(device) end
   event.pull(5.0)
   -- particle accelerator
-  device = component.proxy("FC82C7254610ACB66E7448997ABC247A")
+  device = component.proxy("099E55FF4E8B2890BA5BCFADB2BD43A7")
   if device then displayManufacturer(device) end
   event.pull(5.0)
   -- manufacturer #1
-  device = component.proxy("2118E96042B43F36CC1B98B2A8677EAA")
+  device = component.proxy("03F78EC949869067C0374A99A75F74CE")
   if device then displayManufacturer(device) end
   event.pull(5.0)
   -- manufacturer #2
-  device = component.proxy("49F4FD0B438AA551DC9509BE7762C838")
+  device = component.proxy("F37E150E4DD8DD526446F0A8981D612B")
   if device then displayManufacturer(device) end
   event.pull(5.0)
  end
 end
 
 --main chunk
-local gpus = computer.getPCIDevices(findClass("GPUT1"))
+local gpus = computer.getPCIDevices(classes.GPUT1)
 gpu = gpus[1]
 if not gpu then error("No GPU T1 found!") end
 
-local screen = component.proxy("1EBEEDA642B4A7CE019B6B9413F0C20F")
+local screen = component.proxy("B3A2BF9741E3F43389DC5E881C877B68")
 if not screen then error("No screen") end
 
 gpu:bindScreen(screen)
