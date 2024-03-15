@@ -81,14 +81,20 @@ end
 function printContainer(col, row, percentage, name)
  if(hasScreen) then
   gpu:setForeground(1,1,1,1)
-  if not (name == "Unused") then
+  if (name == "Unused") then  
+   gpu:setForeground(0.25,0.25,0.25,1)
+  elseif (string.find(name, "*")) then
+   if (percentage > 75) then
+    gpu:setForeground(1,0,0,1)
+   elseif (percentage > 50) then
+    gpu:setForeground(1,1,0,1)
+   end
+  else  
    if (percentage < 50) then
     gpu:setForeground(1,0,0,1)
    elseif (percentage < 75) then
     gpu:setForeground(1,1,0,1)
    end
-  else
-   gpu:setForeground(0.25,0.25,0.25,1)
   end
   gpu:setText(col, row, string.format("%-20s", name) .. string.format("%3s", percentage) .. "%")
  else
@@ -197,7 +203,7 @@ if not gpu then
  warn("No GPU T1 found! Add one for increased functionality.")
  hasScreen = false
 else
- local screen = component.proxy("3426D01E46D6C3A9AB9361B0E7E1D005")
+ local screen = component.proxy("E49719A94131C2885AC6D2AF68454855")
  if not screen then error("No screen") end
 
  gpu:bindScreen(screen)
