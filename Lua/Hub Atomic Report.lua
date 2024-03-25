@@ -145,15 +145,42 @@ end
 
 --main chunk
 local gpus = computer.getPCIDevices(classes.GPUT1)
-gpu = gpus[1]
-if not gpu then error("No GPU T1 found!") end
+gpu1 = gpus[1]
+gpu2 = gpus[2]
+gpu3 = gpus[3]
+gpu4 = gpus[4]
+if not gpu1 then error("No GPU T1 found!") end
+if not gpu2 then error("Not enough GPU T1 found!") end
+if not gpu3 then error("Not enough GPU T1 found!") end
+if not gpu4 then error("Not enough GPU T1 found!") end
 
-local screen = component.proxy("692B7B7F4400A3996908FFA1A3204A9C")
-if not screen then error("No screen1") end
+local screen1 = component.proxy("15A67D754D6AF6C7CB3958BBF82E333C")
+if not screen1 then error("No screen1") end
 
-gpu:bindScreen(screen)
-gpu:setSize(60, 35)
-clearScreen(gpu)
+gpu1:bindScreen(screen1)
+gpu1:setSize(60, 35)
+clearScreen(gpu1)
+
+local screen2 = component.proxy("42BF07224A8F7DDB8306D39676B710F6")
+if not screen2 then error("No screen2") end
+
+gpu2:bindScreen(screen2)
+gpu2:setSize(60, 35)
+clearScreen(gpu2)
+
+local screen3 = component.proxy("F3FC195143B8F91901688FAAA7035BA3")
+if not screen3 then error("No screen3") end
+
+gpu3:bindScreen(screen3)
+gpu3:setSize(60, 35)
+clearScreen(gpu3)
+
+local screen4 = component.proxy("794298474FB98875C93B8A82D2A621D8")
+if not screen4 then error("No screen4") end
+
+gpu4:bindScreen(screen4)
+gpu4:setSize(60, 35)
+clearScreen(gpu4)
 
 local net = computer.getPCIDevices(classes.NetworkCard)[1]
 if not net then error("No network card") end
@@ -161,9 +188,21 @@ if not net then error("No network card") end
 event.ignoreAll()
 event.clear()
 event.listen(net)
+net:open(42)
+net:open(43)
+net:open(44)
 net:open(45)
 print("Opened ports")
 
+containersPort42 = {}
+factoriesPort42 = {}
+reactorsPort42 = {}
+containersPort43 = {}
+factoriesPort43 = {}
+reactorsPort43 = {}
+containersPort44 = {}
+factoriesPort44 = {}
+reactorsPort44 = {}
 containersPort45 = {}
 factoriesPort45 = {}
 reactorsPort45 = {}
@@ -176,7 +215,18 @@ while true do
 
  if e == "NetworkMessage" then
   print("Updating data from port: " .. port)
-  updateData(data, containersPort45, factoriesPort45, reactorsPort45)
-  updateScreen(gpu, containersPort45, factoriesPort45, reactorsPort45, "Atomic Alcove")
+  if (port == 42) then
+   updateData(data, containersPort42, factoriesPort42, reactorsPort42)
+   updateScreen(gpu1, containersPort42, factoriesPort42, reactorsPort42, "Atomic Bay")
+  elseif (port == 43) then
+   updateData(data, containersPort43, factoriesPort43, reactorsPort43)
+   updateScreen(gpu2 , containersPort43, factoriesPort43, reactorsPort43, "Atomic Cave")
+  elseif (port == 44) then
+   updateData(data, containersPort44, factoriesPort44, reactorsPort44)
+   updateScreen(gpu3, containersPort44, factoriesPort44, reactorsPort44, "Atomic Waterfall")
+  elseif (port == 45) then
+   updateData(data, containersPort45, factoriesPort45, reactorsPort45)
+   updateScreen(gpu4, containersPort45, factoriesPort45, reactorsPort45, "Atomic Alcove")
+  end
  end
 end
