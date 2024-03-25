@@ -257,7 +257,7 @@ net = computer.getPCIDevices(classes.NetworkCard)[1]
 if not net then error("No network card") end
 
 -- ATOMICBAY 42
--- ATOMICAVE 43
+-- ATOMICCAVE 43
 -- ATOMICWATERFALL 44
 -- ATOMICALCOVE 45
 port = 45
