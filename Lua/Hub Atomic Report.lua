@@ -133,13 +133,16 @@ function updateScreen(g, cont, fact, react, name)
   table.insert(list, n)
  end
  table.sort(list)
-
- for _, n in ipairs(list) do
-  g:setText(col + 1, row, string.format("%-20s", n) .. string.format("%3s", cont[n]) .. "%")
-  row = row + 1
- end
  
- g:setText(0, 33, "Runtime: " .. convertToTime(computer.millis()))
+ for _, n in ipairs(list) do
+  if (row > 33) then
+   g:setText(col + 1, 33, "list truncated")
+  else
+   g:setText(col + 1, row, string.format("%-20s", n) .. string.format("%3s", cont[n]) .. "%")
+   row = row + 1
+  end
+ end
+  
  g:flush()
 end
 
@@ -154,28 +157,28 @@ if not gpu2 then error("Not enough GPU T1 found!") end
 if not gpu3 then error("Not enough GPU T1 found!") end
 if not gpu4 then error("Not enough GPU T1 found!") end
 
-local screen1 = component.proxy("15A67D754D6AF6C7CB3958BBF82E333C")
+local screen1 = component.proxy("ECE7176B4FA48E343D9B9A95F596F4A0")
 if not screen1 then error("No screen1") end
 
 gpu1:bindScreen(screen1)
 gpu1:setSize(60, 35)
 clearScreen(gpu1)
 
-local screen2 = component.proxy("42BF07224A8F7DDB8306D39676B710F6")
+local screen2 = component.proxy("E063C6D04BD3344B7FC55392898CDC0E")
 if not screen2 then error("No screen2") end
 
 gpu2:bindScreen(screen2)
 gpu2:setSize(60, 35)
 clearScreen(gpu2)
 
-local screen3 = component.proxy("F3FC195143B8F91901688FAAA7035BA3")
+local screen3 = component.proxy("377EA38A435EF6A2CF4C93B0926B28E2")
 if not screen3 then error("No screen3") end
 
 gpu3:bindScreen(screen3)
 gpu3:setSize(60, 35)
 clearScreen(gpu3)
 
-local screen4 = component.proxy("794298474FB98875C93B8A82D2A621D8")
+local screen4 = component.proxy("B2851DF741D43DAEFFCC19840C6D91E6")
 if not screen4 then error("No screen4") end
 
 gpu4:bindScreen(screen4)
@@ -206,6 +209,7 @@ reactorsPort44 = {}
 containersPort45 = {}
 factoriesPort45 = {}
 reactorsPort45 = {}
+lastUpdateTime = {}
 
 while true do
  local data = {event.pull()}
@@ -216,17 +220,37 @@ while true do
  if e == "NetworkMessage" then
   print("Updating data from port: " .. port)
   if (port == 42) then
+   lastUpdateTime["Atomic Bay"] = computer.millis()
    updateData(data, containersPort42, factoriesPort42, reactorsPort42)
    updateScreen(gpu1, containersPort42, factoriesPort42, reactorsPort42, "Atomic Bay")
   elseif (port == 43) then
+   lastUpdateTime["Atomic Cave"] = computer.millis()
    updateData(data, containersPort43, factoriesPort43, reactorsPort43)
    updateScreen(gpu2 , containersPort43, factoriesPort43, reactorsPort43, "Atomic Cave")
   elseif (port == 44) then
+   lastUpdateTime["Atomic Waterfall"] = computer.millis()
    updateData(data, containersPort44, factoriesPort44, reactorsPort44)
    updateScreen(gpu3, containersPort44, factoriesPort44, reactorsPort44, "Atomic Waterfall")
   elseif (port == 45) then
+   lastUpdateTime["Atomic Alcove"] = computer.millis()
    updateData(data, containersPort45, factoriesPort45, reactorsPort45)
    updateScreen(gpu4, containersPort45, factoriesPort45, reactorsPort45, "Atomic Alcove")
+  end 
+  if lastUpdateTime["Atomic Bay"] then
+   gpu1:setText(0, 34, "Last update: " .. computer.millis()-lastUpdateTime["Atomic Bay"] .. "ms")
+   gpu1:flush()
+  end
+  if lastUpdateTime["Atomic Cave"] then
+   gpu2:setText(0, 34, "Last update: " .. computer.millis()-lastUpdateTime["Atomic Cave"] .. "ms")
+   gpu2:flush()
+  end
+  if lastUpdateTime["Atomic Waterfall"] then
+   gpu3:setText(0, 34, "Last update: " .. computer.millis()-lastUpdateTime["Atomic Waterfall"] .. "ms")
+   gpu3:flush()
+  end
+  if lastUpdateTime["Atomic Alcove"] then
+   gpu4:setText(0, 34, "Last update: " .. computer.millis()-lastUpdateTime["Atomic Alcove"] .. "ms")
+   gpu4:flush()
   end
  end
 end
