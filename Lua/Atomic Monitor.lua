@@ -222,7 +222,7 @@ function displayReactors()
    data_output = data_output .. "Nuclear Waste: " .. n.itemCount .. " "
    n = fctry:getInventories()[2] -- 2 fuel inventory (water)
    data_input = data_input .. "Water: " .. makePercentage(n.itemCount/50000) .. "% "
-   n = fctry:getInventories()[3] -- 3 inventory potential (rods)
+   n = fctry:getInventories()[3] -- 3 inventory potential (rods) NOPE!!!!!! Bug in mod???!??!?!?!
    data_input = data_input .. "Rods :" .. n.itemCount
   
    local name = fctry.nick:sub(siteNick:len() + 2) --removes site nickname plus space
