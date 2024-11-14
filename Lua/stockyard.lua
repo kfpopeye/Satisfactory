@@ -4,8 +4,8 @@
 -- |                                                           |
 -- -------------------------------------------------------------
 
-computer.log(1, "--- Stockyard Monitor V1.0 ---")
-groupName = "" -- if all the containers are grouped, enter the group name inside the quotes 
+computer.log(1, "--- Stockyard Monitor ---")
+groupName = "stockyard" -- if all the containers are grouped, enter the group name inside the quotes 
                         -- otherwise all containers will be monitored.
 
 --Verbosity is 0 debug, 1 info, 2 warning, 3 error and 4 fatal
@@ -18,7 +18,7 @@ function pfatal(msg) computer.log(4, msg) end
 function getContainers()
  if (groupName == "") then
   c = component.proxy(component.findComponent(classes.FGBuildableStorage))
-  local t = component.proxy(component.findComponent(classes.Build_IndustrialTank_C))
+  local t = component.proxy(component.findComponent(classes.PipeReservoir))
   if (t) then
     for _, value in ipairs(t) do
      table.insert(c, value)
@@ -149,7 +149,7 @@ function updateOutput()
   local max = -1
   local i = 0
 
-  if(invs) then -- fluid buffers do not have an inventory
+  if(cntr:isA(classes.FGBuildableStorage)) then
    while (i < invs.Size) do
     local t = nil
     local stack = invs:getStack(i)
@@ -164,7 +164,7 @@ function updateOutput()
     end
     i = i + 1
    end --while
-  else
+  elseif(cntr:isA(classes.PipeReservoir)) then
    count = cntr.fluidContent
    max = cntr.maxFluidContent
    if (name == "Unused") then
@@ -203,7 +203,7 @@ if not gpu then
  warn("No GPU T1 found! Add one for increased functionality.")
  hasScreen = false
 else
- local screen = component.proxy("E49719A94131C2885AC6D2AF68454855")
+ local screen = component.proxy("10F9509C4B4E9FB9EB99B09C6C621CE5")
  if not screen then error("No screen") end
 
  gpu:bindScreen(screen)
