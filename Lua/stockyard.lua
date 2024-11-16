@@ -43,12 +43,12 @@ function catalogContainers()
   else
    nick = string.gsub(cntr.nick, groupName, "")
   end
-  if(invs) then -- fluid buffers do not have an inventory
+  if(cntr:isA(classes.FGBuildableStorage)) then
    local t = nil
    local stack = invs:getStack(0)
    if (stack and stack.item) then t = stack.item.type end
    if(t) then name = t.name .. nick end
-  else
+  elseif(cntr:isA(classes.PipeReservoir)) then
    name = cntr:getFluidType().name .. nick
   end
   table.insert(containerHashAndName, {cntr.hash, name})
