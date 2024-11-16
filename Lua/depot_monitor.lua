@@ -260,16 +260,6 @@ function processSyncSplitter()
 	end
 end
 
-function updateList(type, amount)
-	print("Received " .. type.name .. " and have " .. amount)
-	for _, item in ipairs(itemList) do
-		if (item["type"] == type) then
-			item["count"] = amount
-			item["inTransit"] = item["inTransit"] - 1
-		end
-	end
-end
-
 -- ***************** main loop ********************
 function mainLoop()
 	while true do
@@ -284,10 +274,22 @@ function mainLoop()
 		elseif e == "OnMouseMove" then
 			refreshTabScreen(p1, p2)
 		elseif e == "ItemRequest" then
-			--programable splitter receives item check if still required
+			--if syncSplitter receives ite deduct from inTransit
+			for _, item in ipairs(itemList) do
+				if (item["type"] == type) then
+					item["inTransit"] = item["inTransit"] - 1
+					if (item["inTransit"] < 0) then item["inTransit"] = 0 end
+					break
+				end
+			end
 		elseif e == "ItemAmountUpdated" then
 			--else if ddu receives item update item counts p1=type, p2=amount
-			updateList(p1, p2)
+			for _, item in ipairs(itemList) do
+				if (item["type"] == p1) then
+					item["count"] = p2
+					break
+				end
+			end
 	 	end
 	 	refillDepot()
 	 	processPassthruInputs()
