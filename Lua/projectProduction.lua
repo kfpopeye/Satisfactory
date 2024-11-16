@@ -1,3 +1,10 @@
+-- -------------------------------------------------------------
+-- |                                                           |
+-- |   projectProduction.lua                                    |
+-- |                                                           |
+-- -------------------------------------------------------------
+computer.log(1, "--- Project Production ---")
+
 function tableLength(T)
   local count = 0
   for _ in pairs(T) do count = count + 1 end
@@ -66,20 +73,20 @@ end
 function loop()
  while true do
   -- assembler
-  local device = component.proxy("4BB958094F2D14197F0EFEB282C73CCC")
-  if device then displayManufacturer(device) end
+  local device = component.proxy("5198135C41F35DC42D08C6B1BDF29E69")
+  if device then displayManufacturer(device) else print("Machine #1 not found") end
   event.pull(5.0)
   -- particle accelerator
-  device = component.proxy("099E55FF4E8B2890BA5BCFADB2BD43A7")
-  if device then displayManufacturer(device) end
+  device = component.proxy("01564603469D22B479BDD8B89332F453")
+  if device then displayManufacturer(device) else print("Machine #2 not found") end
   event.pull(5.0)
   -- manufacturer #1
-  device = component.proxy("03F78EC949869067C0374A99A75F74CE")
-  if device then displayManufacturer(device) end
+  device = component.proxy("3D1D25B64C1E87F9C527FAADDC4FEAB6")
+  if device then displayManufacturer(device) else print("Machine #3 not found") end
   event.pull(5.0)
-  -- manufacturer #2
-  device = component.proxy("F37E150E4DD8DD526446F0A8981D612B")
-  if device then displayManufacturer(device) end
+  -- assembler #2
+  device = component.proxy("A257C42E40709C9B9B3C21A6317EC9A0")
+  if device then displayManufacturer(device) else print("Machine #4 not found") end
   event.pull(5.0)
  end
 end
@@ -89,7 +96,7 @@ local gpus = computer.getPCIDevices(classes.GPUT1)
 gpu = gpus[1]
 if not gpu then error("No GPU T1 found!") end
 
-local screen = component.proxy("B3A2BF9741E3F43389DC5E881C877B68")
+local screen = component.proxy("B8801F4F425AF40E782CD7A53D7F1526")
 if not screen then error("No screen") end
 
 gpu:bindScreen(screen)
