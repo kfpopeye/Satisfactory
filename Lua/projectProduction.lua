@@ -3,7 +3,7 @@
 -- |   projectProduction.lua                                    |
 -- |                                                           |
 -- -------------------------------------------------------------
-computer.log(1, "--- Project Production ---")
+computer.log(1, "--- Project Production v1.0 ---")
 
 function tableLength(T)
   local count = 0
@@ -39,32 +39,38 @@ function displayManufacturer(m)
 
  gpu:setText(0, 1, "Device: " .. m:getType().displayName)
  gpu:setText(0, 2, "Recipe: " .. m:getRecipe().Name)
- local num = tableLength(m:getRecipe():getIngredients())
- gpu:setText(0, 3, "        Requires " .. num .. " ingredients.")
+ local ingredients = m:getRecipe():getIngredients()
  local prod = makePercentage(m.Productivity)
  if prod < 100 then gpu:setForeground(1,1,0,1) end
- gpu:setText(0, 4, "Productivity: " .. prod .. "%")
+ gpu:setText(0, 3, "Productivity: " .. prod .. "%")
  gpu:setForeground(1,1,1,1)
 
  local invs = m:getInputInv()
  local i = 0
- local row = 7
- gpu:setText(0, 6, "Input Inventories ------------------------------------------------------------------")
- while (i < invs.Size) do
-  local t = nil
-  local stack = invs:getStack(i)
-  if (stack.item) then t = stack.item.type end
-  if(t) then
-   local c = stack.count
-   local m = t.max
-   local n = t.name
-   gpu:setText(0, row, n .. ": " .. c .. "/" .. m)
-   row = row + 1
-  else
-   gpu:setText(0, row, "Empty")
-   row = row + 1
-  end
-  i = i + 1
+ local row = 6
+ gpu:setText(0, 5, "Input Inventories ------------------------------------------------------------------")
+ 
+ for _, ing in ipairs(ingredients) do
+ 	--print(inType .. " " .. temp)
+ 	local foundIngredient = false
+	while (i < invs.Size) do
+		local t = nil
+		local stack = invs:getStack(i)
+		if (stack.item) then t = stack.item.type end
+		if(t == ing.type) then
+			local c = stack.count
+			local m = t.max
+			local n = t.name
+			gpu:setText(0, row, n .. ": " .. c .. "/" .. m)
+			foundIngredient = true
+			break
+		end
+		i = i + 1
+	end
+	if not foundIngredient then
+		gpu:setText(0, row, ing.type.name .. ": Empty")
+	end
+	row = row + 1
  end
 
  gpu:flush()
@@ -96,7 +102,7 @@ local gpus = computer.getPCIDevices(classes.GPUT1)
 gpu = gpus[1]
 if not gpu then error("No GPU T1 found!") end
 
-local screen = component.proxy("B8801F4F425AF40E782CD7A53D7F1526")
+local screen = component.proxy("D47622D74E376FBC9DE80FB37F192134")
 if not screen then error("No screen") end
 
 gpu:bindScreen(screen)
