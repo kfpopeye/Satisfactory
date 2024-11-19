@@ -1,3 +1,10 @@
+-- -------------------------------------------------------------
+-- |                                                           |
+-- |  train sign.lua                                           |
+-- |                                                           |
+-- -------------------------------------------------------------
+print ("---------- Train Sign v1.0 ----------")
+
 --120x50 resolution
 function print2Tab(trn)
  clearScreen(gpu2)
@@ -103,7 +110,7 @@ end
 station = component.proxy("A29A211244D1514CEB6C128E2335F462")
 if not station then error("No station found!") end
 
-local gpus = computer.getPCIDevices(findClass("GPUT1"))
+local gpus = computer.getPCIDevices(classes.GPUT1)
 gpu = gpus[1]
 if not gpu then error("No GPU T1 found!") end
 
@@ -114,7 +121,7 @@ gpu:bindScreen(screen)
 gpu:setSize(20, 3)
 clearScreen(gpu)
 
-local tabScreen = computer.getPCIDevices(findClass("FINComputerScreen"))[1]
+local tabScreen = computer.getPCIDevices(classes.FINComputerScreen)[1]
 if not screen then error("No Screen tab found!") end
 gpu2 = gpus[2]
 if not gpu2 then error("No GPU T1 found!") end
