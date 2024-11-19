@@ -3,7 +3,7 @@
 -- |  train sign.lua                                           |
 -- |                                                           |
 -- -------------------------------------------------------------
-print ("---------- Train Sign v1.0 ----------")
+print ("---------- Train Sign v1.1 ----------")
 
 --120x50 resolution
 function print2Tab(trn)
@@ -107,14 +107,14 @@ function clearScreen(g)
 end
 
 -- Main chunk
-station = component.proxy("A29A211244D1514CEB6C128E2335F462")
+station = component.proxy(component.findComponent(classes.Build_TrainStation_C)[1])
 if not station then error("No station found!") end
 
 local gpus = computer.getPCIDevices(classes.GPUT1)
 gpu = gpus[1]
 if not gpu then error("No GPU T1 found!") end
 
-local screen = component.proxy("155E588F4D5629E5D08EBEA80447C19B")
+local screen = component.proxy(component.findComponent(classes.Build_Screen_C)[1])
 if not screen then error("No screen") end
 
 gpu:bindScreen(screen)
