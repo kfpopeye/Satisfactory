@@ -3,6 +3,7 @@
 -- |   Atomic Monitor.lua                                      |
 -- |                                                           |
 -- -------------------------------------------------------------
+computer.log(1, "--- Atomic Monitor v1.0 ---")
 
 -- IF the string is more than 1 word (contains spaces) and greater than 5 characters
 -- this will remove all lowercase letters, remove all dashes and convert spaces to periods
@@ -222,7 +223,7 @@ function displayReactors()
    data_output = data_output .. "Nuclear Waste: " .. n.itemCount .. " "
    n = fctry:getInventories()[2] -- 2 fuel inventory (water)
    data_input = data_input .. "Water: " .. makePercentage(n.itemCount/50000) .. "% "
-   n = fctry:getInventories()[3] -- 3 inventory potential (rods) NOPE!!!!!! Bug in mod???!??!?!?!
+   n = fctry:getInventories()[3] -- 3 inventory potential (rods)
    data_input = data_input .. "Rods :" .. n.itemCount
   
    local name = fctry.nick:sub(siteNick:len() + 2) --removes site nickname plus space
@@ -250,18 +251,18 @@ local gpus = computer.getPCIDevices(classes.GPUT1)
 gpu = gpus[1]
 if not gpu then error("No GPU T1 found!") end
 
-local screen = component.proxy("E9EC01844A238ACAB38F4AB3D671F7F8")
+local screen = component.proxy(component.findComponent(classes.Build_Screen_C)[1])
 if not screen then error("No screen") end
 
 net = computer.getPCIDevices(classes.NetworkCard)[1]
 if not net then error("No network card") end
 
 -- ATOMICBAY 42
--- ATOMICCAVE 43
+-- ATOMICAVE 43
 -- ATOMICWATERFALL 44
 -- ATOMICALCOVE 45
-port = 45
-siteNick = "ATOMICALCOVE"
+port = 42
+siteNick = "ATOMICBAY"
 
 gpu:bindScreen(screen)
 gpu:setSize(65, 27)
