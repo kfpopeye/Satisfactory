@@ -4,7 +4,7 @@
 -- |                                                           |
 -- -------------------------------------------------------------
 
-computer.log(1, "--- Stockyard Monitor ---")
+computer.log(1, "--- Stockyard Monitor v1.0---")
 groupName = "stockyard" -- if all the containers are grouped, enter the group name inside the quotes 
                         -- otherwise all containers will be monitored.
 
@@ -51,11 +51,11 @@ function catalogContainers()
   elseif(cntr:isA(classes.PipeReservoir)) then
    name = cntr:getFluidType().name .. nick
   end
-  table.insert(containerHashAndName, {cntr.hash, name})
+  table.insert(containerIdAndName, {cntr.id, name})
  end
 
- table.sort(containerHashAndName, function (a, b) return a[2] < b[2] end)
- pinfo("Containers found: " .. tableLength(containerHashAndName))
+ table.sort(containerIdAndName, function (a, b) return a[2] < b[2] end)
+ pinfo("Containers found: " .. tableLength(containerIdAndName))
 end
 
 function clearScreen(g)
@@ -115,13 +115,13 @@ function printContainer(col, row, percentage, name)
  end
 end
 
-function getContainerByHash(hash)
+function getContainerById(id)
  local containers = getContainers()
  if not containers then perror("Containers was nil") end
  for _, cntr in pairs(containers) do
-  if (cntr.hash == hash) then return cntr end
+  if (cntr.id == id) then return cntr end
  end
- computer.log(3, "getContainerByHash(): Hash not found.")
+ computer.log(3, "getContainerById(): Id not found.")
  computer.reset()
 end
 
@@ -140,10 +140,10 @@ function updateOutput()
  local row = 1
  local col = 0
 
- for ndx, c in ipairs(containerHashAndName) do
-  local hash = c[1]
+ for ndx, c in ipairs(containerIdAndName) do
+  local id = c[1]
   local name = c[2]
-  local cntr = getContainerByHash(hash)
+  local cntr = getContainerById(id)
   local invs = cntr:getInventories()[1]
   local count = 0
   local max = -1
@@ -159,7 +159,7 @@ function updateOutput()
      max = t.max * invs.Size
      if (name == "Unused") then
       name = t.name .. string.gsub(cntr.nick, groupName, "")
-      containerHashAndName[ndx] = {cntr.hash, name}
+      containerIdAndName[ndx] = {cntr.id, name}
      end
     end
     i = i + 1
@@ -169,7 +169,7 @@ function updateOutput()
    max = cntr.maxFluidContent
    if (name == "Unused") then
     name = cntr:getFluidType().name
-    containerHashAndName[ndx] = {cntr.hash, name}
+    containerIdAndName[ndx] = {cntr.id, name}
    end
   end
 
@@ -203,7 +203,7 @@ if not gpu then
  warn("No GPU T1 found! Add one for increased functionality.")
  hasScreen = false
 else
- local screen = component.proxy("10F9509C4B4E9FB9EB99B09C6C621CE5")
+ local screen = component.proxy(component.findComponent(classes.Build_Screen_C)[1])
  if not screen then error("No screen") end
 
  gpu:bindScreen(screen)
@@ -214,7 +214,7 @@ end
 local icon = {"|", "/", "-", "\\"}
 local iconIndex = 5
 
-containerHashAndName = {}
+containerIdAndName = {}
 catalogContainers()
 
 while true do
