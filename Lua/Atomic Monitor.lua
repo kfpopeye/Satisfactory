@@ -258,7 +258,7 @@ net = computer.getPCIDevices(classes.NetworkCard)[1]
 if not net then error("No network card") end
 
 -- ATOMICBAY 42
--- ATOMICAVE 43
+-- ATOMICCAVE 43
 -- ATOMICWATERFALL 44
 -- ATOMICALCOVE 45
 port = -1
@@ -267,7 +267,7 @@ siteNick = ""
 gpu:bindScreen(screen)
 gpu:setSize(65, 27)
 
-if siteNick == "" or port = -1 then
+if siteNick == "" or port == -1 then
  error("Set site nickname and port number.")
 end
 
