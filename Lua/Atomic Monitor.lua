@@ -261,11 +261,15 @@ if not net then error("No network card") end
 -- ATOMICAVE 43
 -- ATOMICWATERFALL 44
 -- ATOMICALCOVE 45
-port = 43
-siteNick = "ATOMICCAVE"
+port = -1
+siteNick = ""
 
 gpu:bindScreen(screen)
 gpu:setSize(65, 27)
+
+if siteNick == "" or port = -1 then
+ error("Set site nickname and port number.")
+end
 
 while true do
  row = 0
