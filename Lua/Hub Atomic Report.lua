@@ -3,7 +3,7 @@
 -- |   Hub atomic report.lua                                   |
 -- |                                                           |
 -- -------------------------------------------------------------
-computer.log(1, "--- Atomic Atomic Report v1.1 ---")
+computer.log(1, "--- Atomic Atomic Report v1.2 ---")
 
 function clearScreen(g)
  local w,h = g:getSize()
@@ -150,7 +150,7 @@ end
 -- ***************** main loop ********************
 function mainLoop()
 	while true do
-	 local data = {event.pull()}
+	 local data = {event.pull(1)}
 	 e, receiver, sender, port, data = (function(e, receiver, sender, port, ...)
 	 return e, receiver, sender, port, {...}
 	 end) (table.unpack(data))
@@ -174,6 +174,8 @@ function mainLoop()
 	   updateData(data, containersPort45, factoriesPort45, reactorsPort45)
 	   updateScreen(gpu4, containersPort45, factoriesPort45, reactorsPort45, "Atomic Alcove")
 	  end 
+	 end
+	 
 	  if lastUpdateTime["Atomic Bay"] then	  
 	   if updateTimeLimit < computer.millis()-lastUpdateTime["Atomic Bay"] then
 	   	gpu1:setForeground(1,0,0,1) --red
@@ -218,8 +220,7 @@ function mainLoop()
 	   gpu4:setText(0, 34, "Last update: ---------- ms")
 	   gpu4:flush()
 	  end
-	 end
-	end
+	 end -- endwhile
 end
 
 -- ***************** globals ********************
