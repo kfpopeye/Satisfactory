@@ -3,6 +3,7 @@
 -- |   Hub atomic report.lua                                   |
 -- |                                                           |
 -- -------------------------------------------------------------
+computer.log(1, "--- Atomic Atomic Report v1.1 ---")
 
 function clearScreen(g)
  local w,h = g:getSize()
@@ -146,57 +147,82 @@ function updateScreen(g, cont, fact, react, name)
  g:flush()
 end
 
---main chunk
-local gpus = computer.getPCIDevices(classes.GPUT1)
-gpu1 = gpus[1]
-gpu2 = gpus[2]
-gpu3 = gpus[3]
-gpu4 = gpus[4]
-if not gpu1 then error("No GPU T1 found!") end
-if not gpu2 then error("Not enough GPU T1 found!") end
-if not gpu3 then error("Not enough GPU T1 found!") end
-if not gpu4 then error("Not enough GPU T1 found!") end
+-- ***************** main loop ********************
+function mainLoop()
+	while true do
+	 local data = {event.pull()}
+	 e, receiver, sender, port, data = (function(e, receiver, sender, port, ...)
+	 return e, receiver, sender, port, {...}
+	 end) (table.unpack(data))
 
-local screen1 = component.proxy("ECE7176B4FA48E343D9B9A95F596F4A0")
-if not screen1 then error("No screen1") end
+	 if e == "NetworkMessage" then
+	  print("Updating data from port: " .. port)
+	  if (port == 42) then
+	   lastUpdateTime["Atomic Bay"] = computer.millis()
+	   updateData(data, containersPort42, factoriesPort42, reactorsPort42)
+	   updateScreen(gpu1, containersPort42, factoriesPort42, reactorsPort42, "Atomic Bay")
+	  elseif (port == 43) then
+	   lastUpdateTime["Atomic Cave"] = computer.millis()
+	   updateData(data, containersPort43, factoriesPort43, reactorsPort43)
+	   updateScreen(gpu2 , containersPort43, factoriesPort43, reactorsPort43, "Atomic Cave")
+	  elseif (port == 44) then
+	   lastUpdateTime["Atomic Waterfall"] = computer.millis()
+	   updateData(data, containersPort44, factoriesPort44, reactorsPort44)
+	   updateScreen(gpu3, containersPort44, factoriesPort44, reactorsPort44, "Atomic Waterfall")
+	  elseif (port == 45) then
+	   lastUpdateTime["Atomic Alcove"] = computer.millis()
+	   updateData(data, containersPort45, factoriesPort45, reactorsPort45)
+	   updateScreen(gpu4, containersPort45, factoriesPort45, reactorsPort45, "Atomic Alcove")
+	  end 
+	  if lastUpdateTime["Atomic Bay"] then	  
+	   if updateTimeLimit < computer.millis()-lastUpdateTime["Atomic Bay"] then
+	   	gpu1:setForeground(1,0,0,1) --red
+	   end	   
+	   gpu1:setText(0, 34, "Last update: " .. computer.millis()-lastUpdateTime["Atomic Bay"] .. "ms")
+	   gpu1:setForeground(1,1,1,1)
+	   gpu1:flush()
+	  else  
+	   gpu1:setText(0, 34, "Last update: ---------- ms")
+	   gpu1:flush()
+	  end
+	  if lastUpdateTime["Atomic Cave"] then
+	   if updateTimeLimit < computer.millis()-lastUpdateTime["Atomic Cave"] then
+	   	gpu2:setForeground(1,0,0,1) --red
+	   end	
+	   gpu2:setText(0, 34, "Last update: " .. computer.millis()-lastUpdateTime["Atomic Cave"] .. "ms")
+	   gpu2:setForeground(1,1,1,1)
+	   gpu2:flush()
+	  else  
+	   gpu2:setText(0, 34, "Last update: ---------- ms")
+	   gpu2:flush()
+	  end
+	  if lastUpdateTime["Atomic Waterfall"] then
+	   if updateTimeLimit < computer.millis()-lastUpdateTime["Atomic Waterfall"] then
+	   	gpu3:setForeground(1,0,0,1) --red
+	   end
+	   gpu3:setText(0, 34, "Last update: " .. computer.millis()-lastUpdateTime["Atomic Waterfall"] .. "ms")
+	   gpu3:setForeground(1,1,1,1)
+	   gpu3:flush()
+	  else  
+	   gpu3:setText(0, 34, "Last update: ---------- ms")
+	   gpu3:flush()
+	  end
+	  if lastUpdateTime["Atomic Alcove"] then
+	   if updateTimeLimit < computer.millis()-lastUpdateTime["Atomic Alcove"] then
+	   	gpu4:setForeground(1,0,0,1) --red
+	   end
+	   gpu4:setText(0, 34, "Last update: " .. computer.millis()-lastUpdateTime["Atomic Alcove"] .. "ms")
+	   gpu4:setForeground(1,1,1,1)
+	   gpu4:flush()
+	  else  
+	   gpu4:setText(0, 34, "Last update: ---------- ms")
+	   gpu4:flush()
+	  end
+	 end
+	end
+end
 
-gpu1:bindScreen(screen1)
-gpu1:setSize(60, 35)
-clearScreen(gpu1)
-
-local screen2 = component.proxy("E063C6D04BD3344B7FC55392898CDC0E")
-if not screen2 then error("No screen2") end
-
-gpu2:bindScreen(screen2)
-gpu2:setSize(60, 35)
-clearScreen(gpu2)
-
-local screen3 = component.proxy("377EA38A435EF6A2CF4C93B0926B28E2")
-if not screen3 then error("No screen3") end
-
-gpu3:bindScreen(screen3)
-gpu3:setSize(60, 35)
-clearScreen(gpu3)
-
-local screen4 = component.proxy("B2851DF741D43DAEFFCC19840C6D91E6")
-if not screen4 then error("No screen4") end
-
-gpu4:bindScreen(screen4)
-gpu4:setSize(60, 35)
-clearScreen(gpu4)
-
-local net = computer.getPCIDevices(classes.NetworkCard)[1]
-if not net then error("No network card") end
-
-event.ignoreAll()
-event.clear()
-event.listen(net)
-net:open(42)
-net:open(43)
-net:open(44)
-net:open(45)
-print("Opened ports")
-
+-- ***************** globals ********************
 containersPort42 = {}
 factoriesPort42 = {}
 reactorsPort42 = {}
@@ -211,46 +237,62 @@ factoriesPort45 = {}
 reactorsPort45 = {}
 lastUpdateTime = {}
 
-while true do
- local data = {event.pull()}
- e, receiver, sender, port, data = (function(e, receiver, sender, port, ...)
-  return e, receiver, sender, port, {...}
- end) (table.unpack(data))
+--number of milliseconds that are allowed to pass before warning is issued
+updateTimeLimit = 10000
 
- if e == "NetworkMessage" then
-  print("Updating data from port: " .. port)
-  if (port == 42) then
-   lastUpdateTime["Atomic Bay"] = computer.millis()
-   updateData(data, containersPort42, factoriesPort42, reactorsPort42)
-   updateScreen(gpu1, containersPort42, factoriesPort42, reactorsPort42, "Atomic Bay")
-  elseif (port == 43) then
-   lastUpdateTime["Atomic Cave"] = computer.millis()
-   updateData(data, containersPort43, factoriesPort43, reactorsPort43)
-   updateScreen(gpu2 , containersPort43, factoriesPort43, reactorsPort43, "Atomic Cave")
-  elseif (port == 44) then
-   lastUpdateTime["Atomic Waterfall"] = computer.millis()
-   updateData(data, containersPort44, factoriesPort44, reactorsPort44)
-   updateScreen(gpu3, containersPort44, factoriesPort44, reactorsPort44, "Atomic Waterfall")
-  elseif (port == 45) then
-   lastUpdateTime["Atomic Alcove"] = computer.millis()
-   updateData(data, containersPort45, factoriesPort45, reactorsPort45)
-   updateScreen(gpu4, containersPort45, factoriesPort45, reactorsPort45, "Atomic Alcove")
-  end 
-  if lastUpdateTime["Atomic Bay"] then
-   gpu1:setText(0, 34, "Last update: " .. computer.millis()-lastUpdateTime["Atomic Bay"] .. "ms")
-   gpu1:flush()
-  end
-  if lastUpdateTime["Atomic Cave"] then
-   gpu2:setText(0, 34, "Last update: " .. computer.millis()-lastUpdateTime["Atomic Cave"] .. "ms")
-   gpu2:flush()
-  end
-  if lastUpdateTime["Atomic Waterfall"] then
-   gpu3:setText(0, 34, "Last update: " .. computer.millis()-lastUpdateTime["Atomic Waterfall"] .. "ms")
-   gpu3:flush()
-  end
-  if lastUpdateTime["Atomic Alcove"] then
-   gpu4:setText(0, 34, "Last update: " .. computer.millis()-lastUpdateTime["Atomic Alcove"] .. "ms")
-   gpu4:flush()
-  end
- end
+-- ***************** devices ********************
+local gpus = computer.getPCIDevices(classes.GPUT1)
+if tableLength(gpus) == 0 or tableLength(gpus) < 0 then error("GPU T1 count error!") end
+local screens = component.findComponent(classes.Build_Screen_C)
+if tableLength(screens) == 0 or tableLength(screens) < 4 then error("Screens count error!") end
+if not tableLength(screens) == tableLength(gpus) then error("Gpu to screens count mismatch!") end
+
+gpu1 = gpus[1]
+gpu1:bindScreen(component.proxy(screens[1]))
+gpu1:setSize(60, 35)
+clearScreen(gpu1)
+updateScreen(gpu1, containersPort42, factoriesPort42, reactorsPort42, "Atomic Bay")
+gpu1:flush()
+
+
+gpu2 = gpus[2]
+gpu2:bindScreen(component.proxy(screens[2]))
+gpu2:setSize(60, 35)
+clearScreen(gpu2)
+updateScreen(gpu2 , containersPort43, factoriesPort43, reactorsPort43, "Atomic Cave")
+gpu2:flush()
+
+gpu3 = gpus[3]
+gpu3:bindScreen(component.proxy(screens[3]))
+gpu3:setSize(60, 35)
+clearScreen(gpu3)
+updateScreen(gpu3, containersPort44, factoriesPort44, reactorsPort44, "Atomic Waterfall")
+gpu3:flush()
+
+gpu4 = gpus[4]
+gpu4:bindScreen(component.proxy(screens[4]))
+gpu4:setSize(60, 35)
+clearScreen(gpu4)
+updateScreen(gpu4, containersPort45, factoriesPort45, reactorsPort45, "Atomic Alcove")
+gpu4:flush()
+
+local net = computer.getPCIDevices(classes.NetworkCard)[1]
+if not net then error("No network card") end
+
+event.ignoreAll()
+event.clear()
+event.listen(net)
+net:open(42)
+net:open(43)
+net:open(44)
+net:open(45)
+print("Opened ports")
+
+--call main loop
+print("Calling main loop")
+local status, err = pcall(mainLoop)
+if not status then
+ print(err)
+ computer.beep()
+ computer.beep()
 end
