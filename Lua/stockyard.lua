@@ -4,8 +4,8 @@
 -- |                                                           |
 -- -------------------------------------------------------------
 
-computer.log(1, "--- Stockyard Monitor v1.1---")
-groupName = "stockyard" -- if all the containers are grouped, enter the group name inside the quotes 
+computer.log(1, "--- Stockyard Monitor v1.2---")
+groupName = "" -- if all the containers are grouped, enter the group name inside the quotes 
                         -- otherwise all containers will be monitored.
 
 --Verbosity is 0 debug, 1 info, 2 warning, 3 error and 4 fatal
@@ -28,10 +28,17 @@ function getContainers()
   c = component.proxy(component.findComponent(groupName))
  end
  if not c then perror("Containers was nil") end
+ if tableLength(c) == 0 then perror("No containers found. Group name was " .. groupName) end
  return c
 end
 
 function catalogContainers()
+ if groupName == "" then
+  print("No group name. Getting all containers.")
+ else
+  print("Getting all containers with group name: " .. groupName)
+ end
+  
  local containers = getContainers()
  
  for _, cntr in pairs(containers) do
