@@ -3,7 +3,7 @@
 -- |   Atomic Monitor.lua                                      |
 -- |                                                           |
 -- -------------------------------------------------------------
-computer.log(1, "--- Atomic Monitor v1.0 ---")
+computer.log(1, "--- Atomic Monitor v1.3 ---")
 
 -- IF the string is more than 1 word (contains spaces) and greater than 5 characters
 -- this will remove all lowercase letters, remove all dashes and convert spaces to periods
@@ -95,7 +95,7 @@ function displayContainers()
   end --if
   
   local _, h = gpu:getSize()
-  if (row > h-2 and col == 1) then
+  if (row > h-3 and col == 1) then
    col = 30
    row = topRow
   end
@@ -246,7 +246,23 @@ function displayReactors()
  end --for
 end
 
---main chunk
+-- ***************** main loop ********************
+function mainLoop()
+	while true do
+	 row = 0
+	 clearScreen(gpu)
+	 displayFactories()
+	 displayReactors()
+	 displayContainers()
+	 local _, h = gpu:getSize()
+	  gpu:setText(0, h-1, "Run time: " .. convertToTime(computer.millis()))
+	 gpu:setForeground(1,1,1,1)
+	 gpu:flush()
+	 event.pull(5)
+	end
+end
+
+-- ***************** devices ********************
 local gpus = computer.getPCIDevices(classes.GPUT1)
 gpu = gpus[1]
 if not gpu then error("No GPU T1 found!") end
@@ -258,32 +274,24 @@ net = computer.getPCIDevices(classes.NetworkCard)[1]
 if not net then error("No network card") end
 
 -- ATOMICBAY 42
--- ATOMICCAVE 43
+-- ATOMICAVE 43
 -- ATOMICWATERFALL 44
 -- ATOMICALCOVE 45
 port = -1
 siteNick = ""
 
-gpu:bindScreen(screen)
-gpu:setSize(65, 27)
-
 if siteNick == "" or port == -1 then
  error("Set site nickname and port number.")
 end
 
-while true do
- row = 0
- clearScreen(gpu)
- displayFactories()
- displayReactors()
- displayContainers()
- local _, h = gpu:getSize()
- if (row > h) then
-  gpu:setForeground(1,0,0,1)
-  row = h - 2
- end
- gpu:setText(0, row, "Run time: " .. convertToTime(computer.millis()))
- gpu:setForeground(1,1,1,1)
- gpu:flush()
- event.pull(5)
+gpu:bindScreen(screen)
+gpu:setSize(65, 27)
+
+--call main loop
+print("Calling main loop")
+local status, err = pcall(mainLoop)
+if not status then
+ print(err)
+ computer.beep()
+ computer.beep()
 end
