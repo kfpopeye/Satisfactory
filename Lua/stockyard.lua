@@ -4,7 +4,7 @@
 -- |                                                           |
 -- -------------------------------------------------------------
 
-computer.log(1, "--- Stockyard Monitor v1.0---")
+computer.log(1, "--- Stockyard Monitor v1.1---")
 groupName = "stockyard" -- if all the containers are grouped, enter the group name inside the quotes 
                         -- otherwise all containers will be monitored.
 
@@ -194,9 +194,32 @@ function updateOutput()
  end
 end
 
+-- ***************** main loop ********************
+function mainLoop()
+	local icon = {"|", "/", "-", "\\"}
+	local iconIndex = 5
+
+	while true do
+	 if(iconIndex > 4) then 
+	  updateOutput()
+	  iconIndex = 1 
+	 end
+	 if (hasScreen) then
+	  gpu:setBackground(0, 0.5, 1.0, 0.5)
+	  gpu:setForeground(0, 0, 0, 1)
+	  gpu:setText(54, 0, icon[iconIndex])
+	  gpu:flush()
+	 else
+	  computer.stop()
+	 end
+	 iconIndex = iconIndex + 1
+	 event.pull(1)
+	end
+end
+
+-- ***************** devices ********************
 hasScreen = true
 
---main chunk
 local gpus = computer.getPCIDevices(classes.GPUT1)
 gpu = gpus[1]
 if not gpu then
@@ -211,25 +234,14 @@ else
  clearScreen(gpu)
 end
 
-local icon = {"|", "/", "-", "\\"}
-local iconIndex = 5
-
 containerIdAndName = {}
 catalogContainers()
 
-while true do
- if(iconIndex > 4) then 
-  updateOutput()
-  iconIndex = 1 
- end
- if (hasScreen) then
-  gpu:setBackground(0, 0.5, 1.0, 0.5)
-  gpu:setForeground(0, 0, 0, 1)
-  gpu:setText(54, 0, icon[iconIndex])
-  gpu:flush()
- else
-  computer.stop()
- end
- iconIndex = iconIndex + 1
- event.pull(1)
+--call main loop
+print("Calling main loop")
+local status, err = pcall(mainLoop)
+if not status then
+ print(err)
+ computer.beep()
+ computer.beep()
 end
