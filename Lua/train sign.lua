@@ -3,7 +3,7 @@
 -- |  train sign.lua                                           |
 -- |                                                           |
 -- -------------------------------------------------------------
-print ("---------- Train Sign v1.1 ----------")
+print ("---------- Train Sign v1.2 ----------")
 
 --120x50 resolution
 function print2Tab(trn)
@@ -106,7 +106,25 @@ function clearScreen(g)
  g:fill(0, 0, w, h, " ")
 end
 
--- Main chunk
+-- ***************** main loop ********************
+function mainLoop()
+	while true do
+	 local train = station:getTrackGraph():getTrains()[1]
+	 if(not train.isPlayerDriven) then
+	  local t_table = train:getTimeTable()
+	  if(t_table:getCurrentStop()) then
+	   nextStop = t_table:getStops()[t_table:getCurrentStop() + 1].station.name
+	  else
+	   nextSop = "Unknown"
+	  end
+	  print2Tab(train)
+	  printScreen(nextStop)
+	 end
+	 event.pull(2)
+	end
+end
+
+-- ***************** devices ********************
 station = component.proxy(component.findComponent(classes.Build_TrainStation_C)[1])
 if not station then error("No station found!") end
 
@@ -130,17 +148,11 @@ gpu2:bindScreen(tabScreen)
 gpu2:setSize(120, 50)
 clearScreen(gpu2)
 
-while true do
- local train = station:getTrackGraph():getTrains()[1]
- if(not train.isPlayerDriven) then
-  local t_table = train:getTimeTable()
-  if(t_table:getCurrentStop()) then
-   nextStop = t_table:getStops()[t_table:getCurrentStop() + 1].station.name
-  else
-   nextSop = "Unknown"
-  end
-  print2Tab(train)
-  printScreen(nextStop)
- end
- event.pull(2)
+--call main loop
+print("Calling main loop")
+local status, err = pcall(mainLoop)
+if not status then
+ print(err)
+ computer.beep()
+ computer.beep()
 end
