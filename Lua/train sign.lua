@@ -3,7 +3,13 @@
 -- |  train sign.lua                                           |
 -- |                                                           |
 -- -------------------------------------------------------------
-print ("---------- Train Sign v1.2 ----------")
+print ("---------- Train Sign v1.3 ----------")
+
+function tableLength(T)
+  local count = 0
+  for _ in pairs(T) do count = count + 1 end
+  return count
+end
 
 --120x50 resolution
 function print2Tab(trn)
@@ -81,6 +87,7 @@ end
 function printScreen(str)
  print("Screen output:", str)
  clearScreen(gpu)
+ if gpu3 then clearScreen(gpu3) end
  local line0 = string.format("%-20s", station.name) --20 chars (padded with spaces after)
  local line1 = " Next stop:"
  local line2 = " " .. str
@@ -94,6 +101,18 @@ function printScreen(str)
   gpu:setText(0, 1, string.sub(line1, 1, (i + 1)))
   gpu:setText(0, 2, string.sub(line2, 1, (i + 1)))
   gpu:flush()
+  
+  if gpu3 then
+	  gpu3:setBackground(0, 0.5, 1.0, 0.5)
+	  gpu3:setForeground(0, 0, 0, 1)
+	  gpu3:setText(0, 0, string.sub(line0, 1, (i + 1)))
+	  gpu3:setBackground(0, 0, 0, 0)
+	  gpu3:setForeground(1, 1, 1, 1)
+	  gpu3:setText(0, 1, string.sub(line1, 1, (i + 1)))
+	  gpu3:setText(0, 2, string.sub(line2, 1, (i + 1)))
+	  gpu3:flush()
+  end
+  
   i = i + 1
   event.pull(0.0625)
  end
@@ -128,21 +147,28 @@ end
 station = component.proxy(component.findComponent(classes.Build_TrainStation_C)[1])
 if not station then error("No station found!") end
 
+local screens = component.findComponent(classes.Build_Screen_C)
+if not tableLength(screens) == 0 then error("No screens") end
+
 local gpus = computer.getPCIDevices(classes.GPUT1)
 gpu = gpus[1]
 if not gpu then error("No GPU T1 found!") end
-
-local screen = component.proxy(component.findComponent(classes.Build_Screen_C)[1])
-if not screen then error("No screen") end
-
-gpu:bindScreen(screen)
+gpu:bindScreen(component.proxy(screens[1]))
 gpu:setSize(20, 3)
 clearScreen(gpu)
 
 local tabScreen = computer.getPCIDevices(classes.FINComputerScreen)[1]
-if not screen then error("No Screen tab found!") end
+if not tabScreen then error("No Screen tab found!") end
 gpu2 = gpus[2]
 if not gpu2 then error("No GPU T1 found!") end
+
+if tableLength(screens) > 1 then
+	gpu3 = gpus[3]
+	if not gpu3 then error("Not enough GPU T1 found!") end
+	gpu3:bindScreen(component.proxy(screens[2]))
+	gpu3:setSize(20, 3)
+	clearScreen(gpu3)
+end
 
 gpu2:bindScreen(tabScreen)
 gpu2:setSize(120, 50)
