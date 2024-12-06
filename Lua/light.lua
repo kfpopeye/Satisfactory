@@ -3,6 +3,10 @@
 -- |   light.lua                                               |
 -- |                                                           |
 -- -------------------------------------------------------------
+computer.log(1, "--- Power Monitor v1.0---")
+
+gridName = "Northern Desert"
+if gridName == "" then error("Forgot to set grid name.") end
 
 --Verbosity is 0 debug, 1 info, 2 warning, 3 error and 4 fatal
 function pdebug(msg) if (debug) then computer.log(0, msg) end end
@@ -74,6 +78,7 @@ function main()
   if (circuit.hasBatteries) then
    if (circuit.batteryStorePercent <= 0.75) then
     light.colorSlot = 1 --red
+    computer.textNotification ("Batteries are running low at " .. gridName, "KFpopeye")
    elseif (circuit.batteryStorePercent < 1.0) then
     light.colorSlot = 2 --yellow
    else
@@ -85,7 +90,7 @@ function main()
   if (circuit.production < productionMin) then productionMin = circuit.production end
   updateScreen()
 
-  pinfo(computer.millis() .. circuit.batteryStorePercent * 100 .. "%")
+  pinfo(computer.millis() .. " " .. circuit.batteryStorePercent * 100 .. "%")
  end
 end
 
@@ -103,9 +108,12 @@ if(tabScreen and gpu) then
  hasScreen = true
 end
 
-light = component.proxy("9DC8C5AE4A09E050C5297989675B9A92")
+light = component.proxy("64E8DCDF43E41D5CC037F5BD9E2E00AB")
 if not light then perror("No light found!") end
 light.colorSlot = 0 --white
+light.isLightEnabled = true
+light.isTimeOfDayAware = false
+light.intensity = 100.0
 
 circuit = light:getPowerConnectors()[1]:getCircuit()
 if (not circuit) then error("Circuit was nil") end
