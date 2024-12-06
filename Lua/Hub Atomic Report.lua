@@ -3,7 +3,7 @@
 -- |   Hub atomic report.lua                                   |
 -- |                                                           |
 -- -------------------------------------------------------------
-computer.log(1, "--- Atomic Atomic Report v1.3 ---")
+computer.log(1, "--- Hub Atomic Report v1.4 ---")
 
 function clearScreen(g)
  local w,h = g:getSize()
@@ -109,6 +109,7 @@ function updateScreen(g, cont, fact, react, name)
     g:setForeground(1,0,0,1)
   elseif (n["productivity"] < 75) then
     g:setForeground(1,1,0,1)
+    computer.textNotification(name .. " has a slow reactor.", "KFpopeye")
   end
   g:setText(col + 1, row, m .. prod .. n["outputs"])
   row = row + 1
