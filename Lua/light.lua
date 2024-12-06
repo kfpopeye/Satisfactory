@@ -5,7 +5,7 @@
 -- -------------------------------------------------------------
 computer.log(1, "--- Power Monitor v1.0---")
 
-gridName = "Northern Desert"
+gridName = ""
 if gridName == "" then error("Forgot to set grid name.") end
 
 --Verbosity is 0 debug, 1 info, 2 warning, 3 error and 4 fatal
