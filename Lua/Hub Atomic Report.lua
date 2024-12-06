@@ -3,7 +3,7 @@
 -- |   Hub atomic report.lua                                   |
 -- |                                                           |
 -- -------------------------------------------------------------
-computer.log(1, "--- Atomic Atomic Report v1.2 ---")
+computer.log(1, "--- Atomic Atomic Report v1.3 ---")
 
 function clearScreen(g)
  local w,h = g:getSize()
@@ -173,6 +173,10 @@ function mainLoop()
 	   lastUpdateTime["Atomic Alcove"] = computer.millis()
 	   updateData(data, containersPort45, factoriesPort45, reactorsPort45)
 	   updateScreen(gpu4, containersPort45, factoriesPort45, reactorsPort45, "Atomic Alcove")
+	  elseif (port == 46) then
+	   lastUpdateTime["Atomic Peak"] = computer.millis()
+	   updateData(data, containersPort46, factoriesPort46, reactorsPort46)
+	   updateScreen(gpu5, containersPort46, factoriesPort46, reactorsPort46, "Atomic Peak")
 	  end 
 	 end
 	 
@@ -219,6 +223,17 @@ function mainLoop()
 	  else  
 	   gpu4:setText(0, 34, "Last update: ---------- ms")
 	   gpu4:flush()
+	  end	  
+	  if lastUpdateTime["Atomic Peak"] then
+	   if updateTimeLimit < computer.millis()-lastUpdateTime["Atomic Peak"] then
+	   	gpu5:setForeground(1,0,0,1) --red
+	   end
+	   gpu5:setText(0, 34, "Last update: " .. computer.millis()-lastUpdateTime["Atomic Peak"] .. "ms")
+	   gpu5:setForeground(1,1,1,1)
+	   gpu5:flush()
+	  else  
+	   gpu5:setText(0, 34, "Last update: ---------- ms")
+	   gpu5:flush()
 	  end
 	 end -- endwhile
 end
@@ -236,6 +251,9 @@ reactorsPort44 = {}
 containersPort45 = {}
 factoriesPort45 = {}
 reactorsPort45 = {}
+containersPort46 = {}
+factoriesPort46 = {}
+reactorsPort46 = {}
 lastUpdateTime = {}
 
 --number of milliseconds that are allowed to pass before warning is issued
@@ -277,6 +295,14 @@ clearScreen(gpu4)
 updateScreen(gpu4, containersPort45, factoriesPort45, reactorsPort45, "Atomic Alcove")
 gpu4:flush()
 
+
+gpu5 = gpus[5]
+gpu5:bindScreen(component.proxy(screens[5]))
+gpu5:setSize(60, 35)
+clearScreen(gpu5)
+updateScreen(gpu5, containersPort46, factoriesPort46, reactorsPort46, "Atomic Peak")
+gpu5:flush()
+
 local net = computer.getPCIDevices(classes.NetworkCard)[1]
 if not net then error("No network card") end
 
@@ -287,6 +313,7 @@ net:open(42)
 net:open(43)
 net:open(44)
 net:open(45)
+net:open(46)
 print("Opened ports")
 
 --call main loop
