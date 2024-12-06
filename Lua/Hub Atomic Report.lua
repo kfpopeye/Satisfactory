@@ -3,7 +3,9 @@
 -- |   Hub atomic report.lua                                   |
 -- |                                                           |
 -- -------------------------------------------------------------
-computer.log(1, "--- Hub Atomic Report v1.4 ---")
+computer.log(1, "--- Hub Atomic Report v1.5 ---")
+
+sendTextNotifications = false
 
 function clearScreen(g)
  local w,h = g:getSize()
@@ -103,13 +105,14 @@ function updateScreen(g, cont, fact, react, name)
  row = row + 1
   
  --reactors
+ local hasSlowReactor = false
  for m, n in pairs(react) do
   local prod = "(" .. n["productivity"] .. "%) "
   if (n["productivity"] < 50) then
     g:setForeground(1,0,0,1)
   elseif (n["productivity"] < 75) then
     g:setForeground(1,1,0,1)
-    computer.textNotification(name .. " has a slow reactor.", "KFpopeye")
+	hasSlowReactor = true
   end
   g:setText(col + 1, row, m .. prod .. n["outputs"])
   row = row + 1
@@ -118,6 +121,10 @@ function updateScreen(g, cont, fact, react, name)
   g:setText(col + 1, row, indent .. n["inputs"])
   g:setForeground(1,1,1,1)
   row = row + 1
+ end
+ 
+ if sendTextNotifications and hasSlowReactor then
+     computer.textNotification(name .. " has a slow reactor.", "KFpopeye")
  end
  
  --containers
@@ -184,6 +191,7 @@ function mainLoop()
 	  if lastUpdateTime["Atomic Bay"] then	  
 	   if updateTimeLimit < computer.millis()-lastUpdateTime["Atomic Bay"] then
 	   	gpu1:setForeground(1,0,0,1) --red
+	   	if sendTextNotifications then computer.sendTextNotification("Atomic Bay has stopped transmitting.", "KFpopeye") end
 	   end	   
 	   gpu1:setText(0, 34, "Last update: " .. computer.millis()-lastUpdateTime["Atomic Bay"] .. "ms")
 	   gpu1:setForeground(1,1,1,1)
@@ -195,6 +203,7 @@ function mainLoop()
 	  if lastUpdateTime["Atomic Cave"] then
 	   if updateTimeLimit < computer.millis()-lastUpdateTime["Atomic Cave"] then
 	   	gpu2:setForeground(1,0,0,1) --red
+	   	if sendTextNotifications then computer.sendTextNotification("Atomic Cave has stopped transmitting.", "KFpopeye") end
 	   end	
 	   gpu2:setText(0, 34, "Last update: " .. computer.millis()-lastUpdateTime["Atomic Cave"] .. "ms")
 	   gpu2:setForeground(1,1,1,1)
@@ -206,6 +215,7 @@ function mainLoop()
 	  if lastUpdateTime["Atomic Waterfall"] then
 	   if updateTimeLimit < computer.millis()-lastUpdateTime["Atomic Waterfall"] then
 	   	gpu3:setForeground(1,0,0,1) --red
+	   	if sendTextNotifications then computer.sendTextNotification("Atomic Waterfall has stopped transmitting.", "KFpopeye") end
 	   end
 	   gpu3:setText(0, 34, "Last update: " .. computer.millis()-lastUpdateTime["Atomic Waterfall"] .. "ms")
 	   gpu3:setForeground(1,1,1,1)
@@ -217,6 +227,7 @@ function mainLoop()
 	  if lastUpdateTime["Atomic Alcove"] then
 	   if updateTimeLimit < computer.millis()-lastUpdateTime["Atomic Alcove"] then
 	   	gpu4:setForeground(1,0,0,1) --red
+	   	if sendTextNotifications then computer.sendTextNotification("Atomic Alcove has stopped transmitting.", "KFpopeye") end
 	   end
 	   gpu4:setText(0, 34, "Last update: " .. computer.millis()-lastUpdateTime["Atomic Alcove"] .. "ms")
 	   gpu4:setForeground(1,1,1,1)
@@ -228,6 +239,7 @@ function mainLoop()
 	  if lastUpdateTime["Atomic Peak"] then
 	   if updateTimeLimit < computer.millis()-lastUpdateTime["Atomic Peak"] then
 	   	gpu5:setForeground(1,0,0,1) --red
+	   	if sendTextNotifications then computer.sendTextNotification("Atomic Peak has stopped transmitting.", "KFpopeye") end
 	   end
 	   gpu5:setText(0, 34, "Last update: " .. computer.millis()-lastUpdateTime["Atomic Peak"] .. "ms")
 	   gpu5:setForeground(1,1,1,1)
@@ -274,7 +286,6 @@ clearScreen(gpu1)
 updateScreen(gpu1, containersPort42, factoriesPort42, reactorsPort42, "Atomic Bay")
 gpu1:flush()
 
-
 gpu2 = gpus[2]
 gpu2:bindScreen(component.proxy(screens[2]))
 gpu2:setSize(60, 35)
@@ -295,7 +306,6 @@ gpu4:setSize(60, 35)
 clearScreen(gpu4)
 updateScreen(gpu4, containersPort45, factoriesPort45, reactorsPort45, "Atomic Alcove")
 gpu4:flush()
-
 
 gpu5 = gpus[5]
 gpu5:bindScreen(component.proxy(screens[5]))
