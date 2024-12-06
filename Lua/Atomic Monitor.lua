@@ -3,7 +3,7 @@
 -- |   Atomic Monitor.lua                                      |
 -- |                                                           |
 -- -------------------------------------------------------------
-computer.log(1, "--- Atomic Monitor v1.3 ---")
+computer.log(1, "--- Atomic Monitor v1.4 ---")
 
 -- IF the string is more than 1 word (contains spaces) and greater than 5 characters
 -- this will remove all lowercase letters, remove all dashes and convert spaces to periods
@@ -78,7 +78,7 @@ function displayContainers()
   local name = cntr.nick:sub(9)
   local i = 0
   
-  if (invs) then
+  if (cntr:isA(classes.FGBuildableStorage)) then
    while (i < invs.Size) do
     local t = nil
     local stack = invs:getStack(i)
@@ -89,7 +89,7 @@ function displayContainers()
     end
     i = i + 1
    end --while
-  else
+  elseif (cntr:isA(classes.PipeReservoir)) then
    count = cntr.fluidContent
    max = cntr.maxFluidContent
   end --if
@@ -277,6 +277,7 @@ if not net then error("No network card") end
 -- ATOMICCAVE 43
 -- ATOMICWATERFALL 44
 -- ATOMICALCOVE 45
+-- ATOMICPEAK 46
 port = -1
 siteNick = ""
 
@@ -285,7 +286,7 @@ if siteNick == "" or port == -1 then
 end
 
 gpu:bindScreen(screen)
-gpu:setSize(65, 27)
+gpu:setSize(65, 31)
 
 --call main loop
 print("Calling main loop")
