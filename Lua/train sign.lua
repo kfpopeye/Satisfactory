@@ -3,7 +3,7 @@
 -- |  train sign.lua                                           |
 -- |                                                           |
 -- -------------------------------------------------------------
-print ("---------- Train Sign v1.4 ----------")
+print ("---------- Train Sign v1.5 ----------")
 
 function tableLength(T)
   local count = 0
@@ -48,16 +48,19 @@ function print2Tab(trn)
  gpu2:flush()
 end
 
-function printInventory(invs, col)
+function printInventory(invs, col, fcar)
  local i = 0
- local row = 6
+ local row = 7
+ local slotsUsed = 0
  gpu2:setText(0, 5, "Inventories ------------------------------------------------------------------------------------------------------------")
+ gpu2:setText(col, 6, "Freight Car #" .. fcar .. " -------------")
  if (invs.itemCount > 0) then
   while (i < invs.Size) do
    local t = nil
    local stack = invs:getStack(i)
    if (stack.item) then t = stack.item.type end
    if(t) then
+    slotsUsed = slotsUsed + 1
     local c = stack.count
     local m = t.max
     if (t.form == 3) then  --gas
@@ -69,21 +72,24 @@ function printInventory(invs, col)
     row = row + 1
    end
    i = i + 1
-   if(i == invs.Size and row > 6) then gpu2:setText(col, row, "Slots used: " .. (row - 6) .. "/32") end
   end --end while
  else
   gpu2:setText(col, row, "Freight car is empty")
- end
+  row = row + 1
+ end 
+ gpu2:setText(col, row, "  Slots used: " .. slotsUsed .. "/" .. invs.Size)
 end
 
 function printCargo(t)
  local dir = 0
  local column = 0
- for ndx, rv in ipairs(t:getVehicles()) do
+ local fcar = 1
+ for _, rv in ipairs(t:getVehicles()) do
   local invs = rv:getInventories()[1]
   if(invs) then
-   printInventory(invs, column)
+   printInventory(invs, column, fcar)
    column = column + 30
+   fcar = fcar + 1
   end
  end
 end
