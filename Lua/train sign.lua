@@ -3,7 +3,7 @@
 -- |  train sign.lua                                           |
 -- |                                                           |
 -- -------------------------------------------------------------
-print ("---------- Train Sign v1.3 ----------")
+print ("---------- Train Sign v1.4 ----------")
 
 function tableLength(T)
   local count = 0
@@ -17,10 +17,14 @@ function print2Tab(trn)
  gpu2:setBackground(0, 0, 0, 0)
  gpu2:setForeground(1, 1, 1, 1)
  local s = nil
+ local numFCars = 0
+ for _, rv in pairs(trn:getVehicles()) do
+  if rv:getInventories()[1] then numFCars = numFCars + 1 end
+ end
  if(trn.isSelfDriving) then
-  s = "Train: " .. trn:getName() .. " (Autopilot: On)"
+  s = "Train: " .. trn:getName() .. " [" .. numFCars .. " freight cars] (Autopilot: On)"
  else
-  s = "Train: " .. trn:getName() .. " (Autopilot: Off)"
+  s = "Train: " .. trn:getName() .. " [" .. numFCars .. " freight cars] (Autopilot: Off)"
  end
  gpu2:setText(0, 0, s)
  if (trn.hasTimeTable) then
@@ -47,38 +51,39 @@ end
 function printInventory(invs, col)
  local i = 0
  local row = 6
- --invs:sort()
- gpu2:setText(0, 5, "Inventories -----------------------------------------------------------------------------------------------")
- while (i < invs.Size) do
-  local t = nil
-  local stack = invs:getStack(i)
-  if (stack.item) then t = stack.item.type end
-  if(t) then
-   local c = stack.count
-   local m = t.max
-   if (t.form == 3) then  --gas
-    c = c // 1000
-    m = "1600"
+ gpu2:setText(0, 5, "Inventories ------------------------------------------------------------------------------------------------------------")
+ if (invs.itemCount > 0) then
+  while (i < invs.Size) do
+   local t = nil
+   local stack = invs:getStack(i)
+   if (stack.item) then t = stack.item.type end
+   if(t) then
+    local c = stack.count
+    local m = t.max
+    if (t.form == 3) then  --gas
+     c = c // 1000
+     m = "1600"
+    end
+    local n = string.sub(t.name, 1, 20)
+    gpu2:setText(col, row, n .. ": " .. c .. "/" .. m)
+    row = row + 1
    end
-   local n = string.sub(t.name, 1, 20)
-   gpu2:setText(col, row, n .. ": " .. c .. "/" .. m)
-   row = row + 1
-  end
-  i = i + 1
-  if(i == invs.Size and row > 6) then gpu2:setText(col, row, "Slots used: " .. (row - 6) .. "/32") end
+   i = i + 1
+   if(i == invs.Size and row > 6) then gpu2:setText(col, row, "Slots used: " .. (row - 6) .. "/32") end
+  end --end while
+ else
+  gpu2:setText(col, row, "Freight car is empty")
  end
- return row > 6
 end
 
 function printCargo(t)
  local dir = 0
  local column = 0
- for _, rv in pairs(t:getVehicles()) do
-  if(rv:getInventories()[1]) then
-   local invs = rv:getInventories()[1]
-   if(invs and invs.Size > 0) then
-    if(printInventory(invs, column)) then column = column + 30 end
-   end
+ for ndx, rv in ipairs(t:getVehicles()) do
+  local invs = rv:getInventories()[1]
+  if(invs) then
+   printInventory(invs, column)
+   column = column + 30
   end
  end
 end
