@@ -3,7 +3,7 @@
 -- |   Atomic Monitor.lua                                      |
 -- |                                                           |
 -- -------------------------------------------------------------
-computer.log(1, "--- Atomic Monitor v1.4 ---")
+computer.log(1, "--- Atomic Monitor v1.5 ---")
 
 -- IF the string is more than 1 word (contains spaces) and greater than 5 characters
 -- this will remove all lowercase letters, remove all dashes and convert spaces to periods
@@ -71,7 +71,6 @@ function displayContainers()
  local topRow = row
  local col = 1
  for _, cntr in pairs(containers) do
-  --print ("Type: " .. cntr:getType().displayName)
   local invs = cntr:getInventories()[1]
   local count = 0
   local max = -1
@@ -212,19 +211,18 @@ function displayReactors()
  
  row = row + 1
  local invsSize = 0
- for _, fctry in pairs(factories) do
+ for _, fctry in ipairs(factories) do
   local data_output = " OUT> "
   local data_input = " IN> "
   local invs
 
   if (fctry:getType().Name == "Build_GeneratorNuclear_C") then
-
-   local n = fctry:getInventories()[1] -- 1 output inventory (waste)
-   data_output = data_output .. "Nuclear Waste: " .. n.itemCount .. " "
-   n = fctry:getInventories()[2] -- 2 fuel inventory (water)
-   data_input = data_input .. "Water: " .. makePercentage(n.itemCount/50000) .. "% "
-   n = fctry:getInventories()[3] -- 3 inventory potential (rods)
-   data_input = data_input .. "Rods :" .. n.itemCount
+   local n = fctry:getInventories()[1]:getStack(0) -- 1 output inventory (waste)
+   data_output = data_output .. "Nuclear Waste: " .. n.count .. " "
+   n = fctry:getInventories()[2]:getStack(1) -- 2 fuel inventory (water)
+   data_input = data_input .. "Water: " .. makePercentage(n.count/50000) .. "% "
+   n = fctry:getInventories()[2]:getStack(0) -- 3 inventory potential (rods)
+   data_input = data_input .. "Rods :" .. n.count
   
    local name = fctry.nick:sub(siteNick:len() + 2) --removes site nickname plus space
    local prod = makePercentage(fctry.productivity)
