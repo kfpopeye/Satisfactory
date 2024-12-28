@@ -3,7 +3,7 @@
 -- |  train sign.lua                                           |
 -- |                                                           |
 -- -------------------------------------------------------------
-print ("---------- Train Sign v1.5 ----------")
+print ("---------- Train Sign v1.6 ----------")
 
 function tableLength(T)
   local count = 0
@@ -39,21 +39,36 @@ function print2Tab(trn)
   end
   gpu2:setText(0, 2, "Next station: " .. t_table:getStops()[t_table:getCurrentStop() + 1].station.name)
   local stops = "Schedule: "
+  local stops2 = "          -> "
+  local maxWidth, _ = gpu2:getSize()
   for x, stn in pairs(t_table:getStops()) do
-   stops = stops .. stn.station.name .. " -> "
+  	local list = stops .. stn.station.name .. " -> "
+	if #list > maxWidth then
+		stops2 = stops2 .. stn.station.name .. " -> "
+	else
+		stops = stops .. stn.station.name .. " -> "
+	end
   end
-  local l = string.len(stops) - string.len(" -> ")
+  local l = string.len(stops) - string.len(" -> ") --remove last arrow
   gpu2:setText(0, 3, string.sub(stops, 1, l))
+  l = string.len(stops2) - string.len(" -> ") --remove last arrow
+  gpu2:setText(0, 4, string.sub(stops2, 1, l))
  end
  gpu2:flush()
 end
 
 function printInventory(invs, col, fcar)
  local i = 0
- local row = 7
+ local row = 8
  local slotsUsed = 0
- gpu2:setText(0, 5, "Inventories ------------------------------------------------------------------------------------------------------------")
- gpu2:setText(col, 6, "Freight Car #" .. fcar .. " -------------")
+ gpu2:setText(0, 6, "Inventories ------------------------------------------------------------------------------------------------------------")
+ 
+ if fcar > 4 then
+	gpu2:setText(40, 6, "!!!! Train has more than 4 freight cars !!!")
+	return
+ end
+ 
+ gpu2:setText(col, 7, "Freight Car #" .. fcar .. " -------------")
  if (invs.itemCount > 0) then
   while (i < invs.Size) do
    local t = nil
